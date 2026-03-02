@@ -144,10 +144,14 @@ export class NewsComponent implements OnInit {
   private processNewsData(data: WatchlistNewsData): void {
     const flat: FlatNewsItem[] = [];
     const syms = Object.keys(data.symbols);
+    const seenHeadlines = new Set<string>();
     this.symbols.set(syms);
     syms.forEach(sym => {
       (data.symbols[sym] || []).forEach(article => {
-        flat.push({ ...article, symbol: sym });
+        if (!seenHeadlines.has(article.headline)) {
+          seenHeadlines.add(article.headline);
+          flat.push({ ...article, symbol: sym });
+        }
       });
     });
     this.allArticles.set(flat);
