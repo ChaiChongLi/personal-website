@@ -26,7 +26,7 @@ const getAllByUserId = async (userId) => {
     const query = `
       SELECT id, user_id, symbol, market, company_name, notes, created_at, updated_at
       FROM stock_watchlist
-      WHERE user_id = ?
+      WHERE user_id = ? AND is_deleted = 0
       ORDER BY created_at DESC
     `;
     const [rows] = await pool.execute(query, [userId]);
@@ -51,7 +51,7 @@ const getBySymbolAndUserId = async (symbol, userId) => {
     const query = `
       SELECT id, user_id, symbol, market, company_name, notes, created_at, updated_at
       FROM stock_watchlist
-      WHERE symbol = ? AND user_id = ?
+      WHERE symbol = ? AND user_id = ? AND is_deleted = 0
     `;
     const [rows] = await pool.execute(query, [symbol, userId]);
     return rows.length > 0 ? rows[0] : null;
@@ -73,7 +73,7 @@ const getById = async (id, userId) => {
     const query = `
       SELECT id, user_id, symbol, market, company_name, notes, created_at, updated_at
       FROM stock_watchlist
-      WHERE id = ? AND user_id = ?
+      WHERE id = ? AND user_id = ? AND is_deleted = 0
     `;
     const [rows] = await pool.execute(query, [id, userId]);
     return rows.length > 0 ? rows[0] : null;
@@ -96,8 +96,8 @@ const getById = async (id, userId) => {
 const create = async (userId, symbol, market, companyName, notes = '') => {
   try {
     const query = `
-      INSERT INTO stock_watchlist (user_id, symbol, market, company_name, notes, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+      INSERT INTO stock_watchlist (user_id, symbol, market, company_name, notes, is_deleted, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
     `;
     const [result] = await pool.execute(query, [userId, symbol, market, companyName, notes]);
     return result.insertId;
@@ -147,7 +147,7 @@ const update = async (id, userId, updates) => {
     const query = `
       UPDATE stock_watchlist
       SET ${updateFields.join(', ')}
-      WHERE id = ? AND user_id = ?
+      WHERE id = ? AND user_id = ? AND is_deleted = 0
     `;
 
     const [result] = await pool.execute(query, values);
@@ -158,7 +158,9 @@ const update = async (id, userId, updates) => {
 };
 
 /**
- * Remove a stock from user's watchlist
+ * Soft-delete a stock from user's watchlist
+ *
+ * Sets is_deleted = 1 rather than removing the row permanently.
  *
  * @param {number} id - Stock watchlist entry ID
  * @param {string} userId - User UUID (for ownership verification)
@@ -168,8 +170,9 @@ const update = async (id, userId, updates) => {
 const deleteStock = async (id, userId) => {
   try {
     const query = `
-      DELETE FROM stock_watchlist
-      WHERE id = ? AND user_id = ?
+      UPDATE stock_watchlist
+      SET is_deleted = 1, updated_at = CURRENT_TIMESTAMP
+      WHERE id = ? AND user_id = ? AND is_deleted = 0
     `;
     const [result] = await pool.execute(query, [id, userId]);
     return result.affectedRows > 0;

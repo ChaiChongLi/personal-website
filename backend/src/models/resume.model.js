@@ -48,7 +48,7 @@ const getAllByUserId = async (userId) => {
       SELECT id, user_id, profile_name, personal_info, work_experience, education,
              skills, certifications, projects, summary, created_at, updated_at
       FROM resume_profiles
-      WHERE user_id = ?
+      WHERE user_id = ? AND is_deleted = 0
       ORDER BY created_at DESC
     `;
     const [rows] = await pool.execute(query, [userId]);
@@ -72,7 +72,7 @@ const getById = async (id, userId) => {
       SELECT id, user_id, profile_name, personal_info, work_experience, education,
              skills, certifications, projects, summary, created_at, updated_at
       FROM resume_profiles
-      WHERE id = ? AND user_id = ?
+      WHERE id = ? AND user_id = ? AND is_deleted = 0
     `;
     const [rows] = await pool.execute(query, [id, userId]);
     return rows.length > 0 ? parseResume(rows[0]) : null;
@@ -125,9 +125,9 @@ const create = async (
     const query = `
       INSERT INTO resume_profiles (
         user_id, profile_name, personal_info, work_experience, education,
-        skills, certifications, projects, summary, created_at, updated_at
+        skills, certifications, projects, summary, is_deleted, created_at, updated_at
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
     `;
 
     const [result] = await pool.execute(query, [
@@ -204,7 +204,7 @@ const update = async (id, userId, updates) => {
     const query = `
       UPDATE resume_profiles
       SET ${updateFields.join(', ')}
-      WHERE id = ? AND user_id = ?
+      WHERE id = ? AND user_id = ? AND is_deleted = 0
     `;
 
     const [result] = await pool.execute(query, values);
@@ -215,7 +215,9 @@ const update = async (id, userId, updates) => {
 };
 
 /**
- * Delete a resume profile
+ * Soft-delete a resume profile
+ *
+ * Sets is_deleted = 1 rather than removing the row permanently.
  *
  * @param {number} id - Resume profile ID
  * @param {string} userId - User UUID (for ownership verification)
@@ -225,8 +227,9 @@ const update = async (id, userId, updates) => {
 const deleteResume = async (id, userId) => {
   try {
     const query = `
-      DELETE FROM resume_profiles
-      WHERE id = ? AND user_id = ?
+      UPDATE resume_profiles
+      SET is_deleted = 1, updated_at = CURRENT_TIMESTAMP
+      WHERE id = ? AND user_id = ? AND is_deleted = 0
     `;
     const [result] = await pool.execute(query, [id, userId]);
     return result.affectedRows > 0;

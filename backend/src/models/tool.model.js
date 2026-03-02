@@ -32,7 +32,7 @@ const getAllByUserId = async (userId, filters = {}) => {
     let query = `
       SELECT id, user_id, name, github_url, description, tags, category, is_favorite, created_at, updated_at
       FROM tools
-      WHERE user_id = ?
+      WHERE user_id = ? AND is_deleted = 0
     `;
     const params = [userId];
 
@@ -75,7 +75,7 @@ const getById = async (id, userId) => {
     const query = `
       SELECT id, user_id, name, github_url, description, tags, category, is_favorite, created_at, updated_at
       FROM tools
-      WHERE id = ? AND user_id = ?
+      WHERE id = ? AND user_id = ? AND is_deleted = 0
     `;
     const [rows] = await pool.execute(query, [id, userId]);
 
@@ -111,8 +111,8 @@ const create = async (userId, name, githubUrl = '', description = '', tags = [],
     const tagsJson = JSON.stringify(tags);
 
     const query = `
-      INSERT INTO tools (user_id, name, github_url, description, tags, category, is_favorite, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, FALSE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+      INSERT INTO tools (user_id, name, github_url, description, tags, category, is_favorite, is_deleted, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, FALSE, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
     `;
     const [result] = await pool.execute(query, [userId, name, githubUrl, description, tagsJson, category]);
     return result.insertId;
@@ -165,7 +165,7 @@ const update = async (id, userId, updates) => {
     const query = `
       UPDATE tools
       SET ${updateFields.join(', ')}
-      WHERE id = ? AND user_id = ?
+      WHERE id = ? AND user_id = ? AND is_deleted = 0
     `;
 
     const [result] = await pool.execute(query, values);
@@ -176,7 +176,9 @@ const update = async (id, userId, updates) => {
 };
 
 /**
- * Delete a tool entry
+ * Soft-delete a tool entry
+ *
+ * Sets is_deleted = 1 rather than removing the row permanently.
  *
  * @param {number} id - Tool ID
  * @param {string} userId - User UUID (for ownership verification)
@@ -186,8 +188,9 @@ const update = async (id, userId, updates) => {
 const deleteTool = async (id, userId) => {
   try {
     const query = `
-      DELETE FROM tools
-      WHERE id = ? AND user_id = ?
+      UPDATE tools
+      SET is_deleted = 1, updated_at = CURRENT_TIMESTAMP
+      WHERE id = ? AND user_id = ? AND is_deleted = 0
     `;
     const [result] = await pool.execute(query, [id, userId]);
     return result.affectedRows > 0;
@@ -208,7 +211,7 @@ const getCategories = async (userId) => {
     const query = `
       SELECT DISTINCT category
       FROM tools
-      WHERE user_id = ? AND category IS NOT NULL AND category != ''
+      WHERE user_id = ? AND is_deleted = 0 AND category IS NOT NULL AND category != ''
       ORDER BY category ASC
     `;
     const [rows] = await pool.execute(query, [userId]);
@@ -231,7 +234,7 @@ const toggleFavorite = async (id, userId) => {
     const query = `
       UPDATE tools
       SET is_favorite = NOT is_favorite, updated_at = CURRENT_TIMESTAMP
-      WHERE id = ? AND user_id = ?
+      WHERE id = ? AND user_id = ? AND is_deleted = 0
     `;
     const [result] = await pool.execute(query, [id, userId]);
     return result.affectedRows > 0;

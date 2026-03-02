@@ -38,9 +38,11 @@ CREATE TABLE IF NOT EXISTS stock_watchlist (
   notes LONGTEXT COMMENT 'User custom notes/alias for the stock',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'When stock was added to watchlist',
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Last update timestamp',
+  is_deleted TINYINT(1) NOT NULL DEFAULT 0 COMMENT 'Soft delete flag: 0 = active, 1 = deleted',
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   UNIQUE KEY unique_user_stock (user_id, symbol, market) COMMENT 'Prevent duplicate entries for same user/stock/market',
-  INDEX idx_user_id (user_id) COMMENT 'Fast lookup of user watchlists'
+  INDEX idx_user_id (user_id) COMMENT 'Fast lookup of user watchlists',
+  INDEX idx_is_deleted (is_deleted) COMMENT 'Fast filtering of soft-deleted records'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 COMMENT='Stock watchlist entries with market classification';
 
@@ -82,12 +84,14 @@ CREATE TABLE IF NOT EXISTS tools (
   tags JSON COMMENT 'Array of tags for categorization and search',
   category VARCHAR(100) COMMENT 'Tool category (e.g., monitoring, deployment, testing)',
   is_favorite BOOLEAN DEFAULT FALSE COMMENT 'Star/favorite flag for quick access',
+  is_deleted TINYINT(1) NOT NULL DEFAULT 0 COMMENT 'Soft delete flag: 0 = active, 1 = deleted',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'When tool was added',
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Last update timestamp',
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   INDEX idx_user_id (user_id) COMMENT 'Fast lookup of user tools',
   INDEX idx_category (category) COMMENT 'Fast filtering by category',
-  INDEX idx_is_favorite (is_favorite) COMMENT 'Fast lookup of favorite tools'
+  INDEX idx_is_favorite (is_favorite) COMMENT 'Fast lookup of favorite tools',
+  INDEX idx_is_deleted (is_deleted) COMMENT 'Fast filtering of soft-deleted records'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 COMMENT='Bookmarks and tools reference with categorization';
 
@@ -108,10 +112,12 @@ CREATE TABLE IF NOT EXISTS resume_profiles (
   certifications JSON COMMENT 'Array of certifications: [{name, issuer, issue_date, expiry_date, credential_id}, ...]',
   projects JSON COMMENT 'Array of projects: [{name, description, technologies, url, start_date, end_date}, ...]',
   summary TEXT COMMENT 'Professional summary/objective statement',
+  is_deleted TINYINT(1) NOT NULL DEFAULT 0 COMMENT 'Soft delete flag: 0 = active, 1 = deleted',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'When profile was created',
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Last update timestamp',
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-  INDEX idx_user_id (user_id) COMMENT 'Fast lookup of user resume profiles'
+  INDEX idx_user_id (user_id) COMMENT 'Fast lookup of user resume profiles',
+  INDEX idx_is_deleted (is_deleted) COMMENT 'Fast filtering of soft-deleted records'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 COMMENT='Resume profiles with comprehensive career information in JSON format';
 
