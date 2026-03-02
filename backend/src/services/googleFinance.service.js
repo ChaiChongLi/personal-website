@@ -14,6 +14,11 @@
 const axios = require('axios');
 const logger = require('../utils/logger');
 
+// In-memory price cache — shared across all requests in this process.
+// Key: "SYMBOL:EXCHANGE". Value: { data, cachedAt (ms timestamp) }
+const priceCache = new Map();
+const CACHE_TTL_MS = 60 * 1000; // 60 seconds
+
 const googleAxios = axios.create({
   timeout: 10000,
   headers: {
@@ -41,6 +46,14 @@ const resolveExchange = (market) => LEGACY_EXCHANGE_MAP[market] || market;
  */
 const getQuote = async (symbol, market) => {
   const exchange = resolveExchange(market);
+  const cacheKey = `${symbol}:${exchange}`;
+
+  // Return cached price if still fresh
+  const cached = priceCache.get(cacheKey);
+  if (cached && Date.now() - cached.cachedAt < CACHE_TTL_MS) {
+    logger.info(`Google Finance cache hit for ${cacheKey}`);
+    return cached.data;
+  }
 
   // Crypto on Google Finance has no exchange suffix — just the pair (e.g. BTC-USD)
   const url = exchange === 'CRYPTO'
@@ -60,12 +73,15 @@ const getQuote = async (symbol, market) => {
       return null;
     }
 
-    return {
+    const result = {
       price: parseFloat(priceMatch[1]),
       change: changeMatch ? parseFloat(changeMatch[1]) : null,
       changePercent: changePercentMatch ? parseFloat(changePercentMatch[1]) : null,
       timestamp: new Date().toISOString(),
     };
+
+    priceCache.set(cacheKey, { data: result, cachedAt: Date.now() });
+    return result;
   } catch (error) {
     const ref = exchange === 'CRYPTO' ? symbol : `${symbol}:${exchange}`;
     logger.error(`Google Finance error for ${ref}: ${error.message}`);
@@ -84,10 +100,28 @@ const getQuotes = async (items) => {
   if (!items || items.length === 0) return {};
 
   const results = {};
-  const BATCH_SIZE = 5;
+  const toFetch = [];
 
-  for (let i = 0; i < items.length; i += BATCH_SIZE) {
-    const batch = items.slice(i, i + BATCH_SIZE);
+  // Serve cached items immediately, collect what needs a network call
+  for (const item of items) {
+    const exchange  = resolveExchange(item.market);
+    const cacheKey  = `${item.symbol}:${exchange}`;
+    const cached    = priceCache.get(cacheKey);
+    if (cached && Date.now() - cached.cachedAt < CACHE_TTL_MS) {
+      results[item.symbol] = cached.data;
+    } else {
+      toFetch.push(item);
+    }
+  }
+
+  if (toFetch.length > 0) {
+    logger.info(`Google Finance: ${items.length - toFetch.length} cached, ${toFetch.length} to fetch`);
+  }
+
+  // Fetch uncached symbols in batches
+  const BATCH_SIZE = 5;
+  for (let i = 0; i < toFetch.length; i += BATCH_SIZE) {
+    const batch = toFetch.slice(i, i + BATCH_SIZE);
 
     await Promise.all(
       batch.map(async (item) => {
@@ -95,8 +129,7 @@ const getQuotes = async (items) => {
       })
     );
 
-    // Polite delay between batches
-    if (i + BATCH_SIZE < items.length) {
+    if (i + BATCH_SIZE < toFetch.length) {
       await new Promise(resolve => setTimeout(resolve, 300));
     }
   }

@@ -16,6 +16,11 @@
 const axios = require('axios');
 const logger = require('../utils/logger');
 
+// In-memory price cache — shared across all requests in this process.
+// Key: symbol string. Value: { data, cachedAt (ms timestamp) }
+const priceCache = new Map();
+const CACHE_TTL_MS = 60 * 1000; // 60 seconds
+
 const klseAxios = axios.create({
   timeout: 15000,
   maxRedirects: 5,
@@ -62,6 +67,13 @@ const getStat = (html, label) => {
  *   }
  */
 const getQuote = async (symbol) => {
+  // Return cached price if still fresh
+  const cached = priceCache.get(symbol);
+  if (cached && Date.now() - cached.cachedAt < CACHE_TTL_MS) {
+    logger.info(`KLSE cache hit for ${symbol}`);
+    return cached.data;
+  }
+
   const url = `https://www.klsescreener.com/v2/stocks/view/${encodeURIComponent(symbol)}`;
 
   try {
@@ -79,7 +91,7 @@ const getQuote = async (symbol) => {
     // Change % — <span id="change_percent" data-value="-1.1">
     const pctMatch = html.match(/<span[^>]*id=["']change_percent["'][^>]*data-value=["']([+-]?[\d.]+)["']/);
 
-    return {
+    const result = {
       price:         parseFloat(priceMatch[1]),
       change:        changeMatch ? parseFloat(changeMatch[1]) : null,
       changePercent: pctMatch    ? parseFloat(pctMatch[1])   : null,
@@ -90,6 +102,9 @@ const getQuote = async (symbol) => {
       marketCap:     getStat(html, 'Market Cap'),
       timestamp:     new Date().toISOString(),
     };
+
+    priceCache.set(symbol, { data: result, cachedAt: Date.now() });
+    return result;
   } catch (error) {
     logger.error(`KLSE Screener error for ${symbol}: ${error.message}`);
     return null;
@@ -97,8 +112,9 @@ const getQuote = async (symbol) => {
 };
 
 /**
- * Fetch prices for multiple KLSE stocks sequentially with a polite delay
- * to avoid being rate-limited by klsescreener.com.
+ * Fetch prices for multiple KLSE stocks.
+ * Cached symbols (< 60s old) are returned immediately with no network call.
+ * Only stale/new symbols hit the network, sequentially with a polite delay.
  *
  * @param {Array<{symbol: string}>} items - Watchlist items with KLSE market
  * @returns {Promise<Object>} Map of symbol → quote object (or null on failure)
@@ -107,12 +123,27 @@ const getQuotes = async (items) => {
   if (!items || items.length === 0) return {};
 
   const results = {};
+  const toFetch = [];
 
+  // Serve cached items immediately, collect what needs a network call
   for (const item of items) {
-    results[item.symbol] = await getQuote(item.symbol);
-    // Polite delay between requests
-    if (items.indexOf(item) < items.length - 1) {
-      await new Promise(r => setTimeout(r, 500));
+    const cached = priceCache.get(item.symbol);
+    if (cached && Date.now() - cached.cachedAt < CACHE_TTL_MS) {
+      results[item.symbol] = cached.data;
+    } else {
+      toFetch.push(item);
+    }
+  }
+
+  if (toFetch.length > 0) {
+    logger.info(`KLSE Screener: ${items.length - toFetch.length} cached, ${toFetch.length} to fetch`);
+  }
+
+  // Fetch uncached symbols sequentially with polite delay
+  for (let i = 0; i < toFetch.length; i++) {
+    results[toFetch[i].symbol] = await getQuote(toFetch[i].symbol);
+    if (i < toFetch.length - 1) {
+      await new Promise(r => setTimeout(r, 300));
     }
   }
 

@@ -95,7 +95,10 @@
           <div *ngIf="!isLoadingStocks() && !isRefreshingStocks() && recentStocks().length > 0">
             <div *ngFor="let stock of recentStocks()" class="stock-item">
               <div class="stock-header">
-                <span class="stock-symbol">{{ stock.symbol }}</span>
+                <div class="stock-identity">
+                  <span class="stock-symbol">{{ stock.symbol }}</span>
+                  <span class="stock-company">{{ stock.companyName }}</span>
+                </div>
                 <span class="badge badge-primary">{{ stock.market }}</span>
               </div>
               <div class="stock-details">
