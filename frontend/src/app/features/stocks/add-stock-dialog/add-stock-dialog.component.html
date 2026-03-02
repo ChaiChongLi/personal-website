@@ -1,7 +1,7 @@
-<h2 mat-dialog-title>Add Stock to Watchlist</h2>
+<h2 mat-dialog-title>{{ isEditMode ? 'Edit Stock' : 'Add Stock to Watchlist' }}</h2>
 
 <mat-dialog-content>
-  <form [formGroup]="addStockForm" class="add-stock-form">
+  <form [formGroup]="stockForm" class="add-stock-form">
     <!-- Symbol Field -->
     <mat-form-field appearance="outline" class="form-field" floatLabel="always">
       <mat-label>Stock Symbol</mat-label>
@@ -9,10 +9,11 @@
       <input
         matInput
         formControlName="symbol"
-        placeholder="e.g., MAYBANK, AAPL, BTC-USD"
+        placeholder="e.g., 1155, AAPL, BTC-USD"
         (change)="onSymbolChange()"
         autocomplete="off"
       />
+      <mat-hint *ngIf="stockForm.get('market')?.value === 'KLSE'">Use the numeric Bursa code (e.g. 1155 for Maybank)</mat-hint>
       <mat-error *ngIf="symbol?.hasError('required')">Symbol is required</mat-error>
       <mat-error *ngIf="symbol?.hasError('pattern')">Only letters, numbers, dots and hyphens allowed</mat-error>
     </mat-form-field>
@@ -59,7 +60,7 @@
 <mat-dialog-actions align="end">
   <button mat-button (click)="onCancel()">Cancel</button>
   <button mat-raised-button color="primary" (click)="onSubmit()" [disabled]="!isFormValid">
-    <mat-icon>add</mat-icon>
-    Add Stock
+    <mat-icon>{{ isEditMode ? 'save' : 'add' }}</mat-icon>
+    {{ isEditMode ? 'Save Changes' : 'Add Stock' }}
   </button>
 </mat-dialog-actions>

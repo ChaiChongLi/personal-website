@@ -27,19 +27,19 @@ const logger = require('../utils/logger');
 const getNewsBySymbol = async (req, res, next) => {
   try {
     const { symbol } = req.params;
-    const { companyName } = req.query;
+    const { companyName, market } = req.query;
 
     if (!symbol) {
       return sendError(res, 'Symbol is required', 400);
     }
 
-    // Use provided company name or just the symbol for search
+    // Use provided company name or the symbol itself as fallback search term
     const searchTerm = companyName || symbol;
 
     logger.info(`Fetching news for symbol: ${symbol}`);
 
     // Fetch news (from cache or fresh from Google News)
-    const news = await newsService.fetchNewsBySymbol(symbol, searchTerm);
+    const news = await newsService.fetchNewsBySymbol(symbol, searchTerm, market || '');
 
     logger.info(`Retrieved ${news.length} news articles for ${symbol}`);
 

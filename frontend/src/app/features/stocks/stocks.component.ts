@@ -10,7 +10,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatCardModule } from '@angular/material/card';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { StockService, StockItem } from '../../core/services/stock.service';
-import { AddStockDialogComponent } from './add-stock-dialog/add-stock-dialog.component';
+import { AddStockDialogComponent, StockDialogData } from './add-stock-dialog/add-stock-dialog.component';
 
 /**
  * Stocks watchlist component
@@ -38,7 +38,9 @@ export class StocksComponent implements OnInit, OnDestroy {
   private readonly destroyRef = inject(DestroyRef);
 
   // Table column definitions
-  displayedColumns: string[] = ['symbol', 'company', 'market', 'price', 'change', 'changePercent', 'volume', 'high52Week', 'low52Week', 'actions'];
+  // KLSE stocks show volume, dy, pe, nta from KLSE Screener.
+  // Other markets show — for those columns (Google Finance doesn't provide them).
+  displayedColumns: string[] = ['symbol', 'company', 'market', 'price', 'change', 'changePercent', 'volume', 'dy', 'pe', 'nta', 'actions'];
 
   // Data signals
   stocks = signal<StockItem[]>([]);
@@ -124,16 +126,41 @@ export class StocksComponent implements OnInit, OnDestroy {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((result) => {
         if (result) {
-          // Add stock then reload full watchlist to get enriched price data
           this.stockService.addStock(result.symbol, result.market, result.companyName, result.notes)
             .pipe(takeUntilDestroyed(this.destroyRef))
             .subscribe({
-              next: () => {
-                this.loadStocks();
-              },
-              error: (error) => {
-                console.error('Error adding stock:', error);
-              }
+              next: () => { this.loadStocks(); },
+              error: (error) => { console.error('Error adding stock:', error); }
+            });
+        }
+      });
+  }
+
+  /**
+   * Open edit stock dialog pre-filled with existing stock data
+   */
+  openEditStockDialog(stock: StockItem): void {
+    const dialogRef = this.dialog.open(AddStockDialogComponent, {
+      width: '500px',
+      maxHeight: '90vh',
+      panelClass: 'add-stock-dialog',
+      data: { stock } satisfies StockDialogData
+    });
+
+    dialogRef.afterClosed()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((result) => {
+        if (result) {
+          this.stockService.updateStock(stock.id, {
+            symbol:      result.symbol,
+            market:      result.market,
+            companyName: result.companyName,
+            notes:       result.notes
+          })
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe({
+              next: () => { this.loadStocks(); },
+              error: (error) => { console.error('Error updating stock:', error); }
             });
         }
       });
@@ -165,11 +192,11 @@ export class StocksComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Format number with thousand separators
+   * Display a pre-formatted string stat, or '—' if null.
+   * KLSE Screener returns these already formatted (e.g. "1,234,500", "RM 2.34B").
    */
-  formatNumber(value: number | null): string {
-    if (value === null || value === undefined) return '—';
-    return new Intl.NumberFormat('en-US').format(value);
+  formatStat(value: string | null): string {
+    return value ?? '—';
   }
 
   /**

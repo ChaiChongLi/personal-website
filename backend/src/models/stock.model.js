@@ -122,7 +122,7 @@ const create = async (userId, symbol, market, companyName, notes = '') => {
 const update = async (id, userId, updates) => {
   try {
     // Build dynamic UPDATE query based on provided fields
-    const allowedFields = ['notes', 'company_name'];
+    const allowedFields = ['symbol', 'market', 'company_name', 'notes'];
     const updateFields = [];
     const values = [];
 

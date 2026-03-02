@@ -2,7 +2,9 @@
  * Stock Watchlist Controller
  *
  * Handles stock watchlist CRUD operations and real-time price fetching.
- * Integrates with Google Finance for market data (HTML scraping).
+ * Price source is selected based on market:
+ *   - KLSE / MY → KLSE Screener (klsescreener.com) — richer data: volume, DY, P/E, NTA
+ *   - All others → Google Finance (scraping)
  *
  * Routes:
  * - GET /: Get user's complete watchlist with current prices
@@ -15,38 +17,66 @@
 const { sendSuccess, sendError } = require('../utils/response.helper');
 const stockModel = require('../models/stock.model');
 const googleFinanceService = require('../services/googleFinance.service');
+const klseScreenerService = require('../services/klseScreener.service');
 const logger = require('../utils/logger');
 
+// Markets that should use KLSE Screener instead of Google Finance
+const KLSE_MARKETS = new Set(['KLSE', 'MY']);
+
 /**
- * Build an enriched watchlist by merging DB rows with live Google Finance prices.
+ * Build an enriched watchlist by merging DB rows with live price data.
+ *
+ * Malaysia (KLSE/MY) stocks → KLSE Screener (volume, DY, P/E, NTA, market cap available)
+ * All other markets       → Google Finance
  *
  * @param {Array} watchlist - Raw DB rows from stock_watchlist table
  * @returns {Promise<Array>} Enriched watchlist with price fields
  */
 const enrichWithPrices = async (watchlist) => {
-  let quotes = {};
-  try {
-    quotes = await googleFinanceService.getQuotes(
-      watchlist.map(item => ({ symbol: item.symbol, market: item.market }))
-    );
-  } catch (error) {
-    logger.warn(`Failed to fetch Google Finance quotes: ${error.message}`);
-    // Continue with DB data — price fields will be null
+  const klseItems  = watchlist.filter(item => KLSE_MARKETS.has(item.market));
+  const otherItems = watchlist.filter(item => !KLSE_MARKETS.has(item.market));
+
+  let klseQuotes  = {};
+  let otherQuotes = {};
+
+  // Malaysia stocks — KLSE Screener
+  if (klseItems.length > 0) {
+    try {
+      klseQuotes = await klseScreenerService.getQuotes(klseItems);
+    } catch (error) {
+      logger.warn(`KLSE Screener fetch failed: ${error.message}`);
+    }
+  }
+
+  // All other markets — Google Finance
+  if (otherItems.length > 0) {
+    try {
+      otherQuotes = await googleFinanceService.getQuotes(
+        otherItems.map(item => ({ symbol: item.symbol, market: item.market }))
+      );
+    } catch (error) {
+      logger.warn(`Google Finance fetch failed: ${error.message}`);
+    }
   }
 
   return watchlist.map(item => {
-    const q = quotes[item.symbol];
+    const isKlse = KLSE_MARKETS.has(item.market);
+    const q = isKlse ? klseQuotes[item.symbol] : otherQuotes[item.symbol];
+
     return {
       ...item,
-      price: q?.price ?? null,
-      change: q?.change ?? null,
-      changePercent: q?.changePercent ?? null,
-      // Google Finance scraping does not provide these fields
-      volume: null,
-      marketCap: null,
+      price:            q?.price         ?? null,
+      change:           q?.change        ?? null,
+      changePercent:    q?.changePercent ?? null,
+      // KLSE Screener provides these; Google Finance does not
+      volume:           q?.volume        ?? null,
+      marketCap:        q?.marketCap     ?? null,
+      dy:               isKlse ? (q?.dy  ?? null) : null,
+      pe:               isKlse ? (q?.pe  ?? null) : null,
+      nta:              isKlse ? (q?.nta ?? null) : null,
       fiftyTwoWeekHigh: null,
-      fiftyTwoWeekLow: null,
-      lastUpdated: q?.timestamp ?? null,
+      fiftyTwoWeekLow:  null,
+      lastUpdated:      q?.timestamp     ?? null,
     };
   });
 };
@@ -113,7 +143,7 @@ const addStock = async (req, res, next) => {
 };
 
 /**
- * Update watchlist entry (notes and company name only)
+ * Update watchlist entry (symbol, market, company name, notes)
  */
 const updateStock = async (req, res, next) => {
   try {
@@ -121,16 +151,28 @@ const updateStock = async (req, res, next) => {
     if (!userId) return sendError(res, 'Unauthorized', 401);
 
     const { id } = req.params;
-    const { notes, company_name } = req.body;
+    const { symbol, market, company_name, notes } = req.body;
 
     const stock = await stockModel.getById(id, userId);
-    if (!stock) {
-      return sendError(res, 'Stock not found', 404);
+    if (!stock) return sendError(res, 'Stock not found', 404);
+
+    // If symbol or market is changing, check the new combination isn't already in the watchlist
+    const newSymbol = symbol ? symbol.toUpperCase() : stock.symbol;
+    const newMarket = market || stock.market;
+    const symbolChanging = newSymbol !== stock.symbol || newMarket !== stock.market;
+
+    if (symbolChanging) {
+      const duplicate = await stockModel.getBySymbolAndUserId(newSymbol, userId);
+      if (duplicate && String(duplicate.id) !== String(id)) {
+        return sendError(res, 'This stock is already in your watchlist', 409);
+      }
     }
 
     const updates = {};
-    if (notes !== undefined) updates.notes = notes;
+    if (symbol !== undefined)       updates.symbol       = symbol.toUpperCase();
+    if (market !== undefined)       updates.market       = market;
     if (company_name !== undefined) updates.company_name = company_name;
+    if (notes !== undefined)        updates.notes        = notes;
 
     const success = await stockModel.update(id, userId, updates);
     if (!success) return sendError(res, 'Failed to update stock', 400);

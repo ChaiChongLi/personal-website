@@ -185,18 +185,38 @@ const saveToCache = async (symbol, newsItems) => {
   }
 };
 
+// Markets that need Malaysia-specific search context
+const KLSE_MARKETS = new Set(['KLSE', 'MY']);
+
+/**
+ * Build the Google News search query for a stock.
+ * For Malaysia (KLSE/MY) stocks, append "Bursa Malaysia" so results are
+ * local market news rather than generic global company coverage.
+ *
+ * @param {string} companyName - Full company name
+ * @param {string} market - Exchange code
+ * @returns {string} Search query string
+ */
+const buildSearchQuery = (companyName, market) => {
+  if (KLSE_MARKETS.has(market)) {
+    return `"${companyName}" "Bursa Malaysia"`;
+  }
+  return companyName;
+};
+
 /**
  * Fetch news for a specific stock symbol
  *
  * Checks cache first, then fetches fresh news from Google News RSS if not cached.
  * Automatically caches results for future requests.
  *
- * @param {string} symbol - Stock ticker symbol
- * @param {string} companyName - Full company name for search
+ * @param {string} symbol - Stock ticker symbol (numeric code for KLSE stocks)
+ * @param {string} companyName - Full company name used as search term
+ * @param {string} market - Exchange code (KLSE, MY, NASDAQ, etc.)
  * @returns {Promise<Array>} Array of news items
  * @throws {Error} If both cache and API call fail
  */
-const fetchNewsBySymbol = async (symbol, companyName) => {
+const fetchNewsBySymbol = async (symbol, companyName, market = '') => {
   try {
     // Check for cached news first
     const cachedNews = await getCachedNews(symbol);
@@ -205,13 +225,16 @@ const fetchNewsBySymbol = async (symbol, companyName) => {
     }
 
     // Not in cache or expired, fetch fresh news
-    logger.info(`Fetching fresh news for ${symbol}`);
+    logger.info(`Fetching fresh news for ${symbol} (${market || 'unknown market'})`);
+
+    const searchQuery = buildSearchQuery(companyName, market);
+    logger.info(`Search query for ${symbol}: ${searchQuery}`);
 
     // Google News RSS endpoint
     const rssUrl = 'https://news.google.com/rss/search';
     const response = await newsAxios.get(rssUrl, {
       params: {
-        q: `${companyName}`, // Search query
+        q: searchQuery,
         hl: 'en-US',
         gl: 'US',
         ceid: 'US:en'
@@ -258,7 +281,7 @@ const getNewsForWatchlist = async (watchlistItems) => {
   // Fetch news for each watchlist item in parallel
   const promises = watchlistItems.map(async (item) => {
     try {
-      const news = await fetchNewsBySymbol(item.symbol, item.company_name);
+      const news = await fetchNewsBySymbol(item.symbol, item.company_name, item.market);
       results[item.symbol] = news;
     } catch (error) {
       logger.error(`Failed to fetch news for ${item.symbol}:`, error.message);

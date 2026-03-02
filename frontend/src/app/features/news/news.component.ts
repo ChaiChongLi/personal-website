@@ -9,6 +9,7 @@ import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { NewsService, NewsItem, WatchlistNewsData } from '../../core/services/news.service';
+import { StockService } from '../../core/services/stock.service';
 import { NewsPromptDialogComponent } from './news-prompt-dialog/news-prompt-dialog.component';
 
 interface FlatNewsItem extends NewsItem {
@@ -42,6 +43,9 @@ export class NewsComponent implements OnInit {
   dateFilter = signal<string>('24h');
   lastFetchedAt = signal<Date | null>(null);
 
+  /** symbol → company name map built from the stock watchlist */
+  private symbolNameMap = new Map<string, string>();
+
   filteredArticles = computed(() => {
     let articles = this.allArticles();
 
@@ -67,10 +71,43 @@ export class NewsComponent implements OnInit {
     return times.length ? new Date(Math.max(...times)) : null;
   });
 
-  constructor(private newsService: NewsService, private dialog: MatDialog) {}
+  constructor(
+    private newsService: NewsService,
+    private stockService: StockService,
+    private dialog: MatDialog
+  ) {}
 
   ngOnInit(): void {
+    this.buildSymbolNameMap();
     this.loadFromCache();
+  }
+
+  /**
+   * Build a symbol → company name map from the cached watchlist.
+   * Used to show readable labels instead of raw numeric codes for KLSE stocks.
+   */
+  private buildSymbolNameMap(): void {
+    const cached = this.stockService.getCachedWatchlist();
+    if (cached) {
+      cached.forEach(s => this.symbolNameMap.set(s.symbol, s.companyName));
+      return;
+    }
+    // Watchlist not yet cached — fetch it quietly
+    this.stockService.getWatchlist()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (stocks) => stocks.forEach(s => this.symbolNameMap.set(s.symbol, s.companyName)),
+        error: () => {} // Non-critical — labels fall back to raw symbol
+      });
+  }
+
+  /**
+   * Return a human-readable label for a symbol.
+   * For KLSE numeric codes (e.g. "1155"), returns the company name ("Maybank").
+   * For readable ticker symbols (AAPL), returns the symbol as-is.
+   */
+  symbolLabel(symbol: string): string {
+    return this.symbolNameMap.get(symbol) || symbol;
   }
 
   loadFromCache(): void {

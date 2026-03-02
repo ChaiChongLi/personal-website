@@ -70,7 +70,7 @@
               >
                 <mat-button-toggle value="All">All</mat-button-toggle>
                 <mat-button-toggle *ngFor="let sym of symbols()" [value]="sym">
-                  {{ sym }}
+                  {{ symbolLabel(sym) }}
                 </mat-button-toggle>
               </mat-button-toggle-group>
             </div>
@@ -126,7 +126,7 @@
           (click)="openNews(article.url)"
         >
           <div class="news-meta">
-            <span class="symbol-badge">{{ article.symbol }}</span>
+            <span class="symbol-badge">{{ symbolLabel(article.symbol) }}</span>
             <span class="source-text">{{ article.source }}</span>
             <span class="news-time">{{ formatRelativeTime(article.publishedAt) }}</span>
           </div>

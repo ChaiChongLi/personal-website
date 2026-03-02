@@ -10,14 +10,17 @@ export interface StockItem {
   market: string; // Exchange code: KLSE, NASDAQ, NYSE, SGX, HKEX (or legacy MY/US/SG)
   companyName: string;
   notes?: string;
-  // Price data — null when Google Finance fetch fails or symbol not found
+  // Price data — null when fetch fails or symbol not found
   currentPrice: number | null;
   priceChange: number | null;
   changePercent: number | null;
-  volume: number | null;
-  high52Week: number | null;
-  low52Week: number | null;
-  marketCap: number | null;
+  // KLSE Screener provides these as pre-formatted strings; Google Finance leaves them null
+  volume: string | null;
+  marketCap: string | null;
+  // KLSE-specific fields (null for non-KLSE stocks)
+  dy: string | null;   // Dividend Yield, e.g. "6.52%"
+  pe: string | null;   // Price/Earnings ratio, e.g. "12.34"
+  nta: string | null;  // Net Tangible Assets per share, e.g. "1.23"
   addedAt: string;
   lastUpdated: string | null;
 }
@@ -32,9 +35,9 @@ export class StockService {
   constructor(private http: HttpClient) {}
 
   /**
-   * Map raw backend row (snake_case + price fields) to StockItem interface.
-   * Backend enriches each watchlist entry with: price, change, changePercent from Google Finance.
-   * volume, marketCap, fiftyTwoWeekHigh/Low are null (not available from Google Finance scraping).
+   * Map raw backend row to StockItem.
+   * KLSE stocks are enriched via KLSE Screener (volume, marketCap, dy, pe, nta available).
+   * Other markets use Google Finance (only price, change, changePercent available).
    */
   private mapStock(raw: any): StockItem {
     return {
@@ -47,9 +50,10 @@ export class StockService {
       priceChange: raw.change ?? null,
       changePercent: raw.changePercent ?? null,
       volume: raw.volume ?? null,
-      high52Week: raw.fiftyTwoWeekHigh ?? null,
-      low52Week: raw.fiftyTwoWeekLow ?? null,
       marketCap: raw.marketCap ?? null,
+      dy: raw.dy ?? null,
+      pe: raw.pe ?? null,
+      nta: raw.nta ?? null,
       addedAt: raw.created_at || raw.addedAt || '',
       lastUpdated: raw.lastUpdated || null,
     };
@@ -90,26 +94,25 @@ export class StockService {
   }
 
   /**
-   * PUT /stocks/:id — Update notes or company name
+   * PUT /stocks/:id — Update symbol, market, company name, and/or notes
    */
-  updateStock(id: string, updates: { notes?: string; companyName?: string }): Observable<any> {
+  updateStock(id: string, updates: {
+    symbol?: string;
+    market?: string;
+    companyName?: string;
+    notes?: string;
+  }): Observable<any> {
     const payload: any = {};
-    if (updates.notes !== undefined) payload.notes = updates.notes;
+    if (updates.symbol      !== undefined) payload.symbol       = updates.symbol;
+    if (updates.market      !== undefined) payload.market       = updates.market;
     if (updates.companyName !== undefined) payload.company_name = updates.companyName;
+    if (updates.notes       !== undefined) payload.notes        = updates.notes;
 
     return this.http.put<any>(`${environment.apiUrl}/stocks/${id}`, payload).pipe(
       map((response: any) => response.data),
       tap(() => {
-        if (this.cachedWatchlist) {
-          const index = this.cachedWatchlist.findIndex(s => s.id === id);
-          if (index !== -1 && updates.companyName !== undefined) {
-            this.cachedWatchlist[index] = {
-              ...this.cachedWatchlist[index],
-              companyName: updates.companyName,
-              notes: updates.notes ?? this.cachedWatchlist[index].notes,
-            };
-          }
-        }
+        // Invalidate cache so the next load fetches fresh enriched data
+        this.cachedWatchlist = null;
       })
     );
   }

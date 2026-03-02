@@ -1,16 +1,22 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, Optional, Inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
+import { MatDialogModule, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { StockItem } from '../../../core/services/stock.service';
+
+export interface StockDialogData {
+  stock: StockItem;
+}
 
 /**
- * Add stock dialog component
- * Provides form for adding new stocks to watchlist
+ * Add / Edit stock dialog component.
+ * - No MAT_DIALOG_DATA injected → Add mode
+ * - MAT_DIALOG_DATA with { stock } injected → Edit mode (form pre-filled)
  */
 @Component({
   selector: 'app-add-stock-dialog',
@@ -29,94 +35,62 @@ import { MatIconModule } from '@angular/material/icon';
   styleUrls: ['./add-stock-dialog.component.scss']
 })
 export class AddStockDialogComponent implements OnInit {
-  // Form for adding stock
-  addStockForm!: FormGroup;
+  stockForm!: FormGroup;
+  isEditMode: boolean;
 
-  // Exchange options (Google Finance exchange codes)
   marketOptions = [
     { value: 'KLSE',   label: 'KLSE — Bursa Malaysia (MYR)' },
     { value: 'NASDAQ', label: 'NASDAQ — US Tech (USD)' },
     { value: 'NYSE',   label: 'NYSE — US Blue-chip (USD)' },
     { value: 'SGX',    label: 'SGX — Singapore (SGD)' },
-    { value: 'HKEX',  label: 'HKEX — Hong Kong (HKD)' },
+    { value: 'HKEX',   label: 'HKEX — Hong Kong (HKD)' },
     { value: 'CRYPTO', label: 'CRYPTO — Cryptocurrency (USD)' },
   ];
 
   constructor(
     private formBuilder: FormBuilder,
-    private dialogRef: MatDialogRef<AddStockDialogComponent>
-  ) {}
+    private dialogRef: MatDialogRef<AddStockDialogComponent>,
+    @Optional() @Inject(MAT_DIALOG_DATA) public data: StockDialogData | null
+  ) {
+    this.isEditMode = !!data?.stock;
+  }
 
   ngOnInit(): void {
     this.initializeForm();
   }
 
-  /**
-   * Initialize form with validation
-   */
   private initializeForm(): void {
-    this.addStockForm = this.formBuilder.group({
-      symbol: ['', [Validators.required, Validators.pattern(/^[A-Z0-9.\-]+$/)]],
-      market: ['KLSE', Validators.required],
-      companyName: ['', Validators.required],
-      notes: ['']
+    const stock = this.data?.stock;
+    this.stockForm = this.formBuilder.group({
+      symbol:      [stock?.symbol      ?? '',     [Validators.required, Validators.pattern(/^[A-Z0-9.\-]+$/)]],
+      market:      [stock?.market      ?? 'KLSE', Validators.required],
+      companyName: [stock?.companyName ?? '',     Validators.required],
+      notes:       [stock?.notes       ?? '']
     });
   }
 
-  /**
-   * Convert symbol to uppercase automatically
-   */
   onSymbolChange(): void {
-    const symbolControl = this.addStockForm.get('symbol');
-    if (symbolControl) {
-      symbolControl.setValue(symbolControl.value?.toUpperCase(), { emitEvent: false });
+    const ctrl = this.stockForm.get('symbol');
+    if (ctrl) {
+      ctrl.setValue(ctrl.value?.toUpperCase(), { emitEvent: false });
     }
   }
 
-  /**
-   * Handle form submission
-   */
   onSubmit(): void {
-    if (this.addStockForm.invalid) {
-      return;
-    }
+    if (this.stockForm.invalid) return;
 
-    const formData = this.addStockForm.value;
-
-    // Convert empty notes to undefined
-    if (!formData.notes) {
-      delete formData.notes;
-    }
+    const formData = { ...this.stockForm.value };
+    if (!formData.notes) formData.notes = '';
 
     this.dialogRef.close(formData);
   }
 
-  /**
-   * Close dialog without adding stock
-   */
   onCancel(): void {
     this.dialogRef.close();
   }
 
-  /**
-   * Get form control for validation display
-   */
-  get symbol() {
-    return this.addStockForm.get('symbol');
-  }
-
-  get market() {
-    return this.addStockForm.get('market');
-  }
-
-  get companyName() {
-    return this.addStockForm.get('companyName');
-  }
-
-  /**
-   * Check if form is valid
-   */
-  get isFormValid(): boolean {
-    return this.addStockForm.valid;
-  }
+  get symbol()      { return this.stockForm.get('symbol'); }
+  get market()      { return this.stockForm.get('market'); }
+  get companyName() { return this.stockForm.get('companyName'); }
+  get isFormValid() { return this.stockForm.valid; }
 }
