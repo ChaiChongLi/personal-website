@@ -1,0 +1,84 @@
+.add-tool-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin: 1.5rem 0;
+
+  .form-field {
+    width: 100%;
+  }
+}
+
+::ng-deep .add-tool-dialog {
+  // Dialog surface background
+  .mat-mdc-dialog-container,
+  .mat-mdc-dialog-container .mdc-dialog__surface {
+    background-color: var(--bg-card) !important;
+    color: var(--text-primary) !important;
+  }
+
+  // Title
+  h2.mat-mdc-dialog-title,
+  .mat-mdc-dialog-title {
+    color: var(--text-primary) !important;
+  }
+
+  // Content area
+  .mat-mdc-dialog-content {
+    color: var(--text-primary) !important;
+    padding: 0 1.5rem 1rem;
+    max-height: 70vh;
+  }
+
+  // Actions bar
+  .mat-mdc-dialog-actions {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--border);
+  }
+
+  // Form field — label (floating)
+  .mat-mdc-floating-label,
+  .mdc-floating-label {
+    color: var(--text-secondary) !important;
+  }
+
+  // Input and textarea text
+  .mdc-text-field__input,
+  .mat-mdc-input-element {
+    color: var(--text-primary) !important;
+    caret-color: var(--text-primary) !important;
+  }
+
+  // Select displayed value
+  .mat-mdc-select-value,
+  .mat-mdc-select-value-text {
+    color: var(--text-primary) !important;
+  }
+
+  // Select arrow icon
+  .mat-mdc-select-arrow svg {
+    fill: var(--text-secondary) !important;
+  }
+
+  // Hint text
+  .mat-mdc-form-field-hint {
+    color: var(--text-secondary) !important;
+  }
+
+  // Error text
+  .mat-mdc-form-field-error {
+    color: var(--danger) !important;
+  }
+
+  // Outline border
+  .mdc-notched-outline__leading,
+  .mdc-notched-outline__notch,
+  .mdc-notched-outline__trailing {
+    border-color: var(--border) !important;
+  }
+
+  // Prefix icons
+  .mat-mdc-form-field-icon-prefix mat-icon {
+    color: var(--text-secondary) !important;
+  }
+}

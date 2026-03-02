@@ -1,0 +1,143 @@
+// ── Dialog surface dark theme ─────────────────────────────────────────────────
+::ng-deep .tool-detail-dialog {
+  .mat-mdc-dialog-container,
+  .mat-mdc-dialog-container .mdc-dialog__surface {
+    background-color: var(--bg-card) !important;
+    color: var(--text-primary) !important;
+  }
+
+  .mat-mdc-dialog-content {
+    color: var(--text-primary) !important;
+    padding: 0 1.5rem 0.5rem;
+    max-height: 75vh;
+  }
+
+  .mat-mdc-dialog-actions {
+    padding: 0.875rem 1.5rem;
+    border-top: 1px solid var(--border);
+  }
+}
+
+// ── Content layout ────────────────────────────────────────────────────────────
+.detail-content {
+  .detail-header {
+    padding: 1.5rem 0 1rem;
+
+    .detail-title-row {
+      display: flex;
+      align-items: center;
+      gap: 0.625rem;
+      margin-bottom: 0.5rem;
+
+      .detail-category-icon {
+        color: var(--accent);
+        font-size: 1.25rem;
+        width: 1.25rem;
+        height: 1.25rem;
+        flex-shrink: 0;
+      }
+
+      .detail-name {
+        margin: 0;
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        flex: 1;
+        word-break: break-word;
+      }
+
+      .favorite-indicator {
+        color: var(--warning) !important;
+        pointer-events: none;
+        flex-shrink: 0;
+      }
+    }
+
+    .detail-category-badge {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 0.2rem 0.625rem;
+      border-radius: 12px;
+      background-color: var(--bg-secondary);
+      color: var(--accent);
+      border: 1px solid var(--border);
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+    }
+  }
+
+  .detail-divider {
+    height: 1px;
+    background-color: var(--border);
+    margin-bottom: 1.25rem;
+  }
+
+  .detail-section {
+    margin-bottom: 1.25rem;
+
+    .detail-label {
+      margin: 0 0 0.375rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .detail-url {
+      display: flex;
+      align-items: center;
+      gap: 0.375rem;
+      color: var(--accent);
+      font-size: 0.875rem;
+      cursor: pointer;
+      word-break: break-all;
+      text-decoration: none;
+
+      mat-icon {
+        font-size: 1rem;
+        width: 1rem;
+        height: 1rem;
+        flex-shrink: 0;
+      }
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+
+    .detail-description {
+      margin: 0;
+      font-size: 0.9375rem;
+      color: var(--text-primary);
+      line-height: 1.6;
+      white-space: pre-wrap;
+    }
+
+    ::ng-deep {
+      .mat-mdc-chip-set {
+        padding: 0;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.375rem;
+      }
+
+      .mat-mdc-chip.detail-tag {
+        background-color: var(--bg-secondary) !important;
+        color: var(--accent) !important;
+        border: 1px solid var(--border) !important;
+        height: auto;
+        padding: 0.25rem 0.625rem;
+        font-size: 0.75rem;
+      }
+    }
+  }
+
+  .detail-meta {
+    padding: 0.75rem 0 0.25rem;
+    border-top: 1px solid var(--border);
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+  }
+}

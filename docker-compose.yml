@@ -1,0 +1,179 @@
+##############################################################################
+# docker-compose.yml — Personal Website Full Stack
+#
+# Services:
+#   mysql    — MySQL 8 database
+#   backend  — Node.js 20 Express REST API
+#   frontend — Angular 19 served via Nginx
+#
+# Usage:
+#   1. Copy backend/.env.example to backend/.env and fill values
+#   2. Run: docker-compose up -d --build
+#   3. Open: http://localhost (or https://localhost if SSL enabled)
+#
+# Default credentials (change immediately):
+#   App login:  admin / Admin@123
+#   MySQL root: rootpassword
+#   MySQL app:  appuser / AppPass@123
+##############################################################################
+
+version: '3.9'
+
+services:
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # MySQL 8 Database
+  # ─────────────────────────────────────────────────────────────────────────
+  mysql:
+    image: mysql:8.0
+    container_name: personal-website-mysql
+    restart: unless-stopped
+
+    # Security: run with reduced privileges
+    # The init.sql script creates tables and seeds the admin user
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword          # Change this!
+      MYSQL_DATABASE: personal_website
+      MYSQL_USER: appuser
+      MYSQL_PASSWORD: AppPass@123                # Change this!
+      # Enforce strong password policy
+      MYSQL_ROOT_HOST: localhost
+
+    ports:
+      # Only expose MySQL on localhost for security (personal laptop use)
+      - "127.0.0.1:3306:3306"
+
+    volumes:
+      # Persist database data across container restarts
+      - mysql_data:/var/lib/mysql
+      # Run init.sql on first start to create schema and seed data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+
+    networks:
+      - backend-network
+
+    healthcheck:
+      # Use 127.0.0.1 (TCP) — NOT 'localhost', which uses a Unix socket that
+      # may not exist yet during early startup.
+      # Use root (always ready first) instead of appuser (created later).
+      # CMD-SHELL lets the shell expand the password string safely.
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -prootpassword --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 10          # 10 × 10 s = 100 s of retries after start_period
+      start_period: 60s    # Give MySQL time to run init.sql on first boot
+
+    # MySQL performance and security tuning
+    command: >
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+      --sql-mode=STRICT_TRANS_TABLES,NO_ZERO_DATE,NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO
+      --max-connections=100
+      --innodb-buffer-pool-size=256M
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Node.js Backend API
+  # ─────────────────────────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: personal-website-backend
+    restart: unless-stopped
+
+    # Load environment from .env file (copy from .env.example)
+    env_file:
+      - ./backend/.env
+
+    # Override specific env vars for Docker networking
+    environment:
+      NODE_ENV: production
+      DB_HOST: mysql              # Use service name for Docker DNS resolution
+      DB_PORT: 3306
+      DB_NAME: personal_website
+      DB_USER: appuser
+      DB_PASSWORD: AppPass@123   # Match MySQL service password
+      PORT: 3000
+      # CORS: frontend Nginx reverse proxy
+      CORS_ORIGIN: http://localhost
+
+    ports:
+      # Only expose backend on localhost (frontend proxy handles external traffic)
+      - "127.0.0.1:3000:3000"
+
+    volumes:
+      # Persist backend logs outside container
+      - ./backend/logs:/app/logs
+
+    networks:
+      - backend-network
+      - frontend-network
+
+    depends_on:
+      mysql:
+        condition: service_healthy  # Wait for MySQL to be ready
+
+    # healthcheck:
+    #   test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/v1/health"]
+    #   interval: 15s
+    #   timeout: 5s
+    #   retries: 3
+    #   start_period: 20s
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Angular Frontend served by Nginx
+  # ─────────────────────────────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        # Pass API URL at build time for Angular environment
+        API_URL: /api/v1
+    container_name: personal-website-frontend
+    restart: unless-stopped
+
+    ports:
+      # Main entry point: http://localhost
+      - "80:80"
+      # HTTPS entry point (requires SSL cert setup): https://localhost
+      # - "443:443"
+
+    volumes:
+      # Custom Nginx configuration
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      # Optional: mount SSL certificates for HTTPS
+      # - ./nginx/ssl:/etc/nginx/ssl:ro
+
+    networks:
+      - frontend-network
+
+    depends_on:
+      - backend
+
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+# ─────────────────────────────────────────────────────────────────────────
+# Networks — isolate backend from direct internet access
+# ─────────────────────────────────────────────────────────────────────────
+networks:
+  # Backend services (MySQL + Node.js) — not exposed to internet
+  backend-network:
+    driver: bridge
+    internal: false   # backend needs outbound for Yahoo Finance / News APIs
+
+  # Frontend-to-backend communication
+  frontend-network:
+    driver: bridge
+
+# ─────────────────────────────────────────────────────────────────────────
+# Volumes — persistent data storage
+# ─────────────────────────────────────────────────────────────────────────
+volumes:
+  # MySQL data persists across container restarts and rebuilds
+  mysql_data:
+    driver: local

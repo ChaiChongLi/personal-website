@@ -1,0 +1,229 @@
+<div class="dashboard-container">
+  <!-- Page Header -->
+  <div class="page-header">
+    <h1 class="page-title">Dashboard</h1>
+    <p class="page-subtitle">Welcome back! Here's your overview</p>
+  </div>
+
+  <!-- Summary Cards Grid -->
+  <div class="summary-grid">
+    <mat-card class="summary-card">
+      <mat-card-content class="card-content">
+        <div class="icon-container stocks"><mat-icon>trending_up</mat-icon></div>
+        <div class="card-text">
+          <p class="card-label">Stocks Watched</p>
+          <p class="card-value">{{ recentStocks().length }}</p>
+        </div>
+      </mat-card-content>
+      <button mat-stroked-button class="card-action" routerLink="/stocks">
+        View Stocks <mat-icon>arrow_forward</mat-icon>
+      </button>
+    </mat-card>
+
+    <mat-card class="summary-card">
+      <mat-card-content class="card-content">
+        <div class="icon-container todos"><mat-icon>check_circle</mat-icon></div>
+        <div class="card-text">
+          <p class="card-label">Total Tasks</p>
+          <p class="card-value">{{ getTotalTodos() }}</p>
+          <p class="card-subtext" *ngIf="todoStats()">{{ todoStats()?.done }} completed</p>
+        </div>
+      </mat-card-content>
+      <button mat-stroked-button class="card-action" routerLink="/todo">
+        View Todos <mat-icon>arrow_forward</mat-icon>
+      </button>
+    </mat-card>
+
+    <mat-card class="summary-card">
+      <mat-card-content class="card-content">
+        <div class="icon-container tools"><mat-icon>build</mat-icon></div>
+        <div class="card-text">
+          <p class="card-label">Tools Bookmarked</p>
+          <p class="card-value">{{ toolsCount() }}</p>
+        </div>
+      </mat-card-content>
+      <button mat-stroked-button class="card-action" routerLink="/tools">
+        View Tools <mat-icon>arrow_forward</mat-icon>
+      </button>
+    </mat-card>
+
+    <mat-card class="summary-card">
+      <mat-card-content class="card-content">
+        <div class="icon-container news"><mat-icon>newspaper</mat-icon></div>
+        <div class="card-text">
+          <p class="card-label">Market News</p>
+          <p class="card-value">{{ recentNews().length }}</p>
+          <p class="card-subtext">articles cached</p>
+        </div>
+      </mat-card-content>
+      <button mat-stroked-button class="card-action" routerLink="/news">
+        View News <mat-icon>arrow_forward</mat-icon>
+      </button>
+    </mat-card>
+  </div>
+
+  <!-- Content Grid -->
+  <div class="content-grid">
+
+    <!-- LEFT COLUMN: Stocks + Tasks -->
+    <div class="content-column left-column">
+
+      <!-- Stocks -->
+      <mat-card class="content-card">
+        <mat-card-header class="section-header">
+          <h2>Watchlist</h2>
+          <div class="header-actions">
+            <button
+              mat-icon-button
+              matTooltip="Refresh prices"
+              (click)="refreshStockPrices()"
+              [disabled]="isRefreshingStocks() || isLoadingStocks()"
+            >
+              <mat-icon [class.spinning]="isRefreshingStocks()">refresh</mat-icon>
+            </button>
+            <button mat-icon-button routerLink="/stocks" matTooltip="Open Stocks">
+              <mat-icon>open_in_new</mat-icon>
+            </button>
+          </div>
+        </mat-card-header>
+
+        <mat-card-content class="section-content stocks-scroll">
+          <div *ngIf="isLoadingStocks() || isRefreshingStocks()" class="loading-state">
+            <mat-spinner diameter="36"></mat-spinner>
+          </div>
+
+          <div *ngIf="!isLoadingStocks() && !isRefreshingStocks() && recentStocks().length > 0">
+            <div *ngFor="let stock of recentStocks()" class="stock-item">
+              <div class="stock-header">
+                <span class="stock-symbol">{{ stock.symbol }}</span>
+                <span class="badge badge-primary">{{ stock.market }}</span>
+              </div>
+              <div class="stock-details">
+                <span class="stock-price">{{ formatStockPrice(stock.currentPrice, stock.market) }}</span>
+                <span [class]="'change-badge ' + getPriceChangeClass(stock.priceChange)">
+                  {{ (stock.priceChange ?? 0) >= 0 ? '↑' : '↓' }}
+                  {{ formatPriceChange(stock.priceChange) }}
+                  ({{ formatPercentChange(stock.changePercent) }})
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div *ngIf="!isLoadingStocks() && recentStocks().length === 0" class="empty-state">
+            <mat-icon>trending_up</mat-icon>
+            <p>No stocks added yet</p>
+            <button mat-stroked-button routerLink="/stocks" color="primary">Add Stocks</button>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Active Tasks (pending + in-progress) -->
+      <mat-card class="content-card">
+        <mat-card-header class="section-header">
+          <h2>Active Tasks</h2>
+          <button mat-icon-button routerLink="/todo" matTooltip="Open Tasks">
+            <mat-icon>open_in_new</mat-icon>
+          </button>
+        </mat-card-header>
+
+        <mat-card-content class="section-content tasks-scroll">
+          <div *ngIf="isLoadingTodos()" class="loading-state">
+            <mat-spinner diameter="36"></mat-spinner>
+          </div>
+
+          <div *ngIf="!isLoadingTodos() && activeTodos().length > 0" class="task-list">
+            <div *ngFor="let todo of activeTodos()" class="task-item" routerLink="/todo">
+              <div class="task-meta">
+                <span [class]="'badge ' + getPriorityColor(todo.priority)">{{ todo.priority }}</span>
+                <span [class]="'status-chip ' + getStatusClass(todo.status)">
+                  <span class="status-dot"></span>
+                  {{ getStatusLabel(todo.status) }}
+                </span>
+                <span *ngIf="todo.dueDate" [class]="'task-due' + (isTodoOverdue(todo) ? ' overdue' : '')">
+                  <mat-icon>schedule</mat-icon>
+                  {{ formatShortDate(todo.dueDate) }}
+                </span>
+              </div>
+              <p class="task-title">{{ todo.title }}</p>
+            </div>
+          </div>
+
+          <div *ngIf="!isLoadingTodos() && activeTodos().length === 0" class="empty-state">
+            <mat-icon>check_circle_outline</mat-icon>
+            <p>All caught up! No active tasks.</p>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+    </div>
+
+    <!-- RIGHT COLUMN: News -->
+    <div class="content-column">
+      <mat-card class="content-card">
+        <mat-card-header class="section-header">
+          <h2>Latest News</h2>
+          <div class="header-actions">
+            <button
+              mat-icon-button
+              matTooltip="Fetch latest from Google"
+              (click)="fetchLatestNews()"
+              [disabled]="isFetchingNews() || isLoadingNews()"
+            >
+              <mat-icon [class.spinning]="isFetchingNews()">download</mat-icon>
+            </button>
+            <button mat-icon-button routerLink="/news" matTooltip="Open News">
+              <mat-icon>open_in_new</mat-icon>
+            </button>
+          </div>
+        </mat-card-header>
+
+        <mat-card-content class="section-content news-scroll">
+          <div *ngIf="isLoadingNews() || isFetchingNews()" class="loading-state">
+            <mat-spinner diameter="36"></mat-spinner>
+            <p>{{ isFetchingNews() ? 'Fetching latest news...' : 'Loading...' }}</p>
+          </div>
+
+          <!-- News feed -->
+          <ng-container *ngIf="!isLoadingNews() && !isFetchingNews()">
+            <div *ngIf="displayedNews().length > 0" class="news-feed">
+              <div
+                *ngFor="let article of displayedNews()"
+                class="news-item"
+                (click)="openNews(article.url)"
+              >
+                <div class="news-meta">
+                  <span class="symbol-badge">{{ article.symbol }}</span>
+                  <span class="news-source">{{ article.source }}</span>
+                  <span class="news-time">{{ formatRelativeTime(article.publishedAt) }}</span>
+                </div>
+                <p class="news-headline">{{ article.headline }}</p>
+              </div>
+
+              <!-- Load More button — visible when scrolled to bottom -->
+              <div *ngIf="hasMoreNews()" class="load-more-row">
+                <button mat-stroked-button (click)="loadMoreNews()" class="load-more-btn">
+                  <mat-icon>expand_more</mat-icon>
+                  Load More
+                  <span class="load-more-count">({{ recentNews().length - displayedCount() }} remaining)</span>
+                </button>
+              </div>
+
+              <div *ngIf="!hasMoreNews() && recentNews().length > 0" class="all-loaded">
+                All {{ recentNews().length }} articles shown
+              </div>
+            </div>
+
+            <div *ngIf="displayedNews().length === 0" class="empty-state">
+              <mat-icon>newspaper</mat-icon>
+              <p>No cached news yet</p>
+              <button mat-stroked-button (click)="fetchLatestNews()" color="primary">
+                Fetch Latest <mat-icon>download</mat-icon>
+              </button>
+            </div>
+          </ng-container>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+  </div>
+</div>

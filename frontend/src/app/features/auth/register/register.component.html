@@ -1,0 +1,130 @@
+<div class="login-container">
+  <mat-card class="login-card">
+    <!-- Header -->
+    <mat-card-header class="header">
+      <div class="logo">
+        <mat-icon class="logo-icon">dashboard</mat-icon>
+      </div>
+      <h1 class="title">Personal Hub</h1>
+      <p class="subtitle">Create your account</p>
+    </mat-card-header>
+
+    <mat-divider></mat-divider>
+
+    <!-- Register Form -->
+    <mat-card-content class="content">
+      <!-- Error Message -->
+      <div *ngIf="errorMessage" class="error-message">
+        <mat-icon>error_outline</mat-icon>
+        <span>{{ errorMessage }}</span>
+      </div>
+
+      <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="form">
+
+        <!-- Username Field -->
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Username</mat-label>
+          <input
+            matInput
+            formControlName="username"
+            placeholder="Choose a username"
+            autocomplete="username"
+            [disabled]="isLoading"
+          />
+          <mat-icon matPrefix>person</mat-icon>
+          <mat-error *ngIf="username?.hasError('required')">Username is required</mat-error>
+          <mat-error *ngIf="username?.hasError('minlength')">Username must be at least 3 characters</mat-error>
+          <mat-error *ngIf="username?.hasError('maxlength')">Username must be 50 characters or less</mat-error>
+        </mat-form-field>
+
+        <!-- Email Field -->
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Email</mat-label>
+          <input
+            matInput
+            type="email"
+            formControlName="email"
+            placeholder="Enter your email"
+            autocomplete="email"
+            [disabled]="isLoading"
+          />
+          <mat-icon matPrefix>email</mat-icon>
+          <mat-error *ngIf="email?.hasError('required')">Email is required</mat-error>
+          <mat-error *ngIf="email?.hasError('email')">Please enter a valid email address</mat-error>
+        </mat-form-field>
+
+        <!-- Password Field -->
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Password</mat-label>
+          <input
+            matInput
+            formControlName="password"
+            [type]="hidePassword ? 'password' : 'text'"
+            placeholder="Create a password"
+            autocomplete="new-password"
+            [disabled]="isLoading"
+          />
+          <mat-icon matPrefix>lock</mat-icon>
+          <button
+            mat-icon-button
+            matSuffix
+            (click)="togglePasswordVisibility()"
+            type="button"
+            [disabled]="isLoading"
+          >
+            <mat-icon>{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+          </button>
+          <mat-error *ngIf="password?.hasError('required')">Password is required</mat-error>
+          <mat-error *ngIf="password?.hasError('minlength')">Password must be at least 8 characters</mat-error>
+          <mat-error *ngIf="password?.hasError('pattern')">
+            Must contain uppercase, lowercase, number, and special character 
+          </mat-error>
+        </mat-form-field>
+
+        <!-- Confirm Password Field -->
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Confirm Password</mat-label>
+          <input
+            matInput
+            formControlName="confirmPassword"
+            [type]="hideConfirmPassword ? 'password' : 'text'"
+            placeholder="Repeat your password"
+            autocomplete="new-password"
+            [disabled]="isLoading"
+          />
+          <mat-icon matPrefix>lock_reset</mat-icon>
+          <button
+            mat-icon-button
+            matSuffix
+            (click)="toggleConfirmPasswordVisibility()"
+            type="button"
+            [disabled]="isLoading"
+          >
+            <mat-icon>{{ hideConfirmPassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+          </button>
+          <mat-error *ngIf="confirmPassword?.hasError('required')">Please confirm your password</mat-error>
+          <mat-error *ngIf="registerForm.hasError('passwordMismatch') && confirmPassword?.touched">
+            Passwords do not match
+          </mat-error>
+        </mat-form-field>
+
+        <!-- Submit Button -->
+        <button
+          mat-raised-button
+          color="primary"
+          type="submit"
+          [disabled]="!canSubmit"
+          class="submit-button"
+        >
+          <span *ngIf="isLoading">Creating account...</span>
+          <span *ngIf="!isLoading">Create Account</span>
+        </button>
+      </form>
+
+      <!-- Link to login -->
+      <div class="footer-text">
+        <p>Already have an account? <a routerLink="/login">Sign in</a></p>
+      </div>
+    </mat-card-content>
+  </mat-card>
+</div>

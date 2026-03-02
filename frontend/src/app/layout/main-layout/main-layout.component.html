@@ -1,0 +1,73 @@
+<mat-sidenav-container class="main-container">
+  <!-- Sidebar Navigation -->
+  <mat-sidenav
+    #sidenav
+    [opened]="sidenavOpened()"
+    [mode]="isHandset() ? 'over' : 'side'"
+    [disableClose]="!isHandset()"
+    class="sidebar"
+  >
+    <app-sidebar (navigate)="onSidenavNavigate()"></app-sidebar>
+  </mat-sidenav>
+
+  <!-- Main Content Area -->
+  <mat-sidenav-content>
+    <!-- Top Toolbar -->
+    <mat-toolbar color="primary" class="toolbar">
+      <!-- Menu Toggle Button (Mobile) -->
+      <button
+        mat-icon-button
+        (click)="toggleSidebar()"
+        *ngIf="isHandset()"
+        class="menu-button"
+        aria-label="Toggle navigation menu"
+      >
+        <mat-icon>menu</mat-icon>
+      </button>
+
+      <!-- Brand / Home Link -->
+      <a routerLink="/dashboard" class="toolbar-brand">
+        <mat-icon class="brand-icon">dashboard</mat-icon>
+        <span class="toolbar-title">Personal Hub</span>
+      </a>
+
+      <!-- Spacer -->
+      <span class="spacer"></span>
+
+      <!-- User Menu -->
+      <button mat-icon-button [matMenuTriggerFor]="userMenu" class="user-button">
+        <mat-icon>account_circle</mat-icon>
+      </button>
+
+      <mat-menu #userMenu="matMenu" class="user-menu">
+        <div mat-menu-item disabled class="user-info">
+          <span class="username">{{ getUserDisplayName() }}</span>
+        </div>
+
+        <mat-divider></mat-divider>
+
+        <button mat-menu-item>
+          <mat-icon>settings</mat-icon>
+          <span>Settings</span>
+        </button>
+
+        <button mat-menu-item>
+          <mat-icon>help_outline</mat-icon>
+          <span>Help & Feedback</span>
+        </button>
+
+        <mat-divider></mat-divider>
+
+        <button mat-menu-item (click)="logout()">
+          <mat-icon>logout</mat-icon>
+          <span>Logout</span>
+        </button>
+      </mat-menu>
+    </mat-toolbar>
+
+    <!-- Page Content -->
+    <div class="content-wrapper">
+      <router-outlet></router-outlet>
+    </div>
+  </mat-sidenav-content>
+</mat-sidenav-container>

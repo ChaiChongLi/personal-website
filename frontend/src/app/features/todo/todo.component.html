@@ -1,0 +1,254 @@
+<div class="todo-container">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="header-left">
+      <h1>Tasks & To-Do List</h1>
+      <div class="stats" *ngIf="stats()">
+        <span class="stat">Total: <strong>{{ stats()?.total }}</strong></span>
+        <span class="stat">Pending: <strong class="text-warning">{{ stats()?.pending }}</strong></span>
+        <span class="stat">In Progress: <strong class="text-accent">{{ stats()?.inProgress }}</strong></span>
+        <span class="stat">Done: <strong class="text-success">{{ stats()?.done }}</strong></span>
+      </div>
+    </div>
+
+    <button mat-raised-button color="primary" (click)="showAddForm.set(!showAddForm())">
+      <mat-icon>add</mat-icon>
+      Add Task
+    </button>
+  </div>
+
+  <!-- Add Todo Form -->
+  <mat-card *ngIf="showAddForm()" class="add-form-card">
+    <mat-card-content>
+      <form [formGroup]="newTodoForm" (ngSubmit)="addTodo()" class="add-todo-form">
+        <mat-form-field appearance="outline" class="form-field" floatLabel="always">
+          <mat-label>Task Title</mat-label>
+          <input matInput formControlName="title" placeholder="What needs to be done?" />
+          <mat-icon matPrefix>check_circle_outline</mat-icon>
+          <mat-error *ngIf="title?.hasError('required')">Title is required</mat-error>
+          <mat-error *ngIf="title?.hasError('minlength')">Title must be at least 3 characters</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="form-field" floatLabel="always">
+          <mat-label>Description</mat-label>
+          <textarea matInput formControlName="description" placeholder="Add details... (optional)" rows="3"></textarea>
+          <mat-icon matPrefix>description</mat-icon>
+        </mat-form-field>
+
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="form-field" floatLabel="always">
+            <mat-label>Priority</mat-label>
+            <mat-select formControlName="priority">
+              <mat-option value="low">Low</mat-option>
+              <mat-option value="medium">Medium</mat-option>
+              <mat-option value="high">High</mat-option>
+            </mat-select>
+            <mat-icon matPrefix>priority_high</mat-icon>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="form-field" floatLabel="always">
+            <mat-label>Due Date</mat-label>
+            <input matInput formControlName="dueDate" type="date" />
+            <mat-icon matPrefix>calendar_today</mat-icon>
+          </mat-form-field>
+        </div>
+
+        <div class="form-actions">
+          <button mat-button type="button" (click)="showAddForm.set(false)">Cancel</button>
+          <button mat-raised-button color="primary" type="submit" [disabled]="newTodoForm.invalid">
+            <mat-icon>add</mat-icon>
+            Add Task
+          </button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading()" class="loading-state">
+    <mat-spinner diameter="50"></mat-spinner>
+    <p>Loading tasks...</p>
+  </div>
+
+  <!-- Kanban Board -->
+  <div *ngIf="!isLoading()" class="kanban-board">
+
+    <!-- Pending Column -->
+    <div class="kanban-column">
+      <div class="column-header">
+        <h2>Pending</h2>
+        <span class="count">{{ getTodosByStatus('pending').length }}</span>
+      </div>
+
+      <div class="column-content">
+        <mat-card
+          *ngFor="let todo of getTodosByStatus('pending')"
+          class="todo-card"
+          [class.overdue]="isOverdue(todo)"
+          (click)="openDetailDialog(todo)"
+        >
+          <mat-card-content class="card-content">
+            <div class="card-header">
+              <span [class]="'badge ' + getPriorityColor(todo.priority)">{{ todo.priority }}</span>
+              <div class="card-actions">
+                <button
+                  mat-icon-button
+                  matTooltip="View / Edit"
+                  (click)="openDetailDialog(todo); $event.stopPropagation()"
+                >
+                  <mat-icon>open_in_new</mat-icon>
+                </button>
+                <button
+                  mat-icon-button
+                  matTooltip="Start working on this"
+                  (click)="updateTodoStatus(todo, 'in-progress'); $event.stopPropagation()"
+                >
+                  <mat-icon>play_arrow</mat-icon>
+                </button>
+                <button
+                  mat-icon-button
+                  matTooltip="Delete"
+                  (click)="deleteTodo(todo, $event)"
+                  color="warn"
+                >
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </div>
+            </div>
+
+            <h3 class="todo-title">{{ todo.title }}</h3>
+            <p *ngIf="todo.description" class="todo-description">{{ todo.description }}</p>
+
+            <div *ngIf="todo.dueDate" class="due-date" [class.overdue]="isOverdue(todo)">
+              <mat-icon>calendar_today</mat-icon>
+              <span>{{ formatDate(todo.dueDate) }}</span>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <div *ngIf="getTodosByStatus('pending').length === 0" class="empty-column">
+          <p>No pending tasks</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- In Progress Column -->
+    <div class="kanban-column">
+      <div class="column-header">
+        <h2>In Progress</h2>
+        <span class="count">{{ getTodosByStatus('in-progress').length }}</span>
+      </div>
+
+      <div class="column-content">
+        <mat-card
+          *ngFor="let todo of getTodosByStatus('in-progress')"
+          class="todo-card"
+          (click)="openDetailDialog(todo)"
+        >
+          <mat-card-content class="card-content">
+            <div class="card-header">
+              <span [class]="'badge ' + getPriorityColor(todo.priority)">{{ todo.priority }}</span>
+              <div class="card-actions">
+                <button
+                  mat-icon-button
+                  matTooltip="View / Edit"
+                  (click)="openDetailDialog(todo); $event.stopPropagation()"
+                >
+                  <mat-icon>open_in_new</mat-icon>
+                </button>
+                <button
+                  mat-icon-button
+                  matTooltip="Move back to Pending"
+                  (click)="updateTodoStatus(todo, 'pending'); $event.stopPropagation()"
+                >
+                  <mat-icon>undo</mat-icon>
+                </button>
+                <button
+                  mat-icon-button
+                  matTooltip="Mark as complete"
+                  (click)="updateTodoStatus(todo, 'done'); $event.stopPropagation()"
+                >
+                  <mat-icon>check_circle</mat-icon>
+                </button>
+                <button
+                  mat-icon-button
+                  matTooltip="Delete"
+                  (click)="deleteTodo(todo, $event)"
+                  color="warn"
+                >
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </div>
+            </div>
+
+            <h3 class="todo-title">{{ todo.title }}</h3>
+            <p *ngIf="todo.description" class="todo-description">{{ todo.description }}</p>
+
+            <div *ngIf="todo.dueDate" class="due-date">
+              <mat-icon>calendar_today</mat-icon>
+              <span>{{ formatDate(todo.dueDate) }}</span>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <div *ngIf="getTodosByStatus('in-progress').length === 0" class="empty-column">
+          <p>No in-progress tasks</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Done Column -->
+    <div class="kanban-column">
+      <div class="column-header">
+        <h2>Completed</h2>
+        <span class="count">{{ getTodosByStatus('done').length }}</span>
+      </div>
+
+      <div class="column-content">
+        <mat-card
+          *ngFor="let todo of getTodosByStatus('done')"
+          class="todo-card done"
+          (click)="openDetailDialog(todo)"
+        >
+          <mat-card-content class="card-content">
+            <div class="card-header">
+              <span [class]="'badge ' + getPriorityColor(todo.priority)">{{ todo.priority }}</span>
+              <div class="card-actions">
+                <button
+                  mat-icon-button
+                  matTooltip="View / Edit"
+                  (click)="openDetailDialog(todo); $event.stopPropagation()"
+                >
+                  <mat-icon>open_in_new</mat-icon>
+                </button>
+                <button
+                  mat-icon-button
+                  matTooltip="Reopen task"
+                  (click)="updateTodoStatus(todo, 'pending'); $event.stopPropagation()"
+                >
+                  <mat-icon>replay</mat-icon>
+                </button>
+                <button
+                  mat-icon-button
+                  matTooltip="Delete"
+                  (click)="deleteTodo(todo, $event)"
+                  color="warn"
+                >
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </div>
+            </div>
+
+            <h3 class="todo-title">{{ todo.title }}</h3>
+            <p *ngIf="todo.description" class="todo-description">{{ todo.description }}</p>
+          </mat-card-content>
+        </mat-card>
+
+        <div *ngIf="getTodosByStatus('done').length === 0" class="empty-column">
+          <p>No completed tasks</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>

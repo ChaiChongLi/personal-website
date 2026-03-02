@@ -1,0 +1,141 @@
+.main-container {
+  height: 100vh;
+  width: 100%;
+
+  // mat-sidenav-container must fill the full viewport width
+  mat-sidenav-container {
+    width: 100%;
+    height: 100%;
+  }
+
+  .sidebar {
+    width: 260px;
+    background-color: var(--bg-secondary);
+    border-right: 1px solid var(--border);
+  }
+}
+
+// mat-sidenav-content must be a flex column so the content-wrapper's flex: 1 works
+::ng-deep .mat-sidenav-content {
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  padding: 0 1.5rem;
+  height: 64px;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+
+  .menu-button {
+    margin-right: 1rem;
+  }
+
+  .toolbar-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+    transition: opacity var(--transition-fast);
+
+    &:hover {
+      opacity: 0.8;
+      text-decoration: none;
+    }
+
+    .brand-icon {
+      color: var(--accent);
+      font-size: 1.375rem;
+      width: 1.375rem;
+      height: 1.375rem;
+    }
+  }
+
+  .toolbar-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .spacer {
+    flex: 1 1 auto;
+  }
+
+  .user-button {
+    color: var(--text-primary);
+
+    &:hover {
+      color: var(--accent);
+    }
+  }
+}
+
+.user-menu {
+  .user-info {
+    padding: 0.5rem 1rem !important;
+    cursor: default !important;
+
+    .username {
+      font-weight: 600;
+      color: var(--text-primary);
+      display: block;
+      font-size: 0.875rem;
+    }
+  }
+
+  button {
+    color: var(--text-primary) !important;
+
+    mat-icon {
+      margin-right: 0.75rem;
+    }
+
+    &:hover {
+      background-color: var(--bg-card) !important;
+    }
+  }
+}
+
+.content-wrapper {
+  flex: 1;
+  overflow-y: auto;
+  background-color: var(--bg-primary);
+  padding: 2rem;
+
+  // Responsive padding
+  @media (max-width: 768px) {
+    padding: 1rem;
+  }
+
+  @media (max-width: 600px) {
+    padding: 1rem 0.5rem;
+  }
+}
+
+// Divider styling
+::ng-deep {
+  .user-menu .mat-divider {
+    border-top-color: var(--border) !important;
+  }
+}
+
+// Responsive sidenav
+@media (max-width: 768px) {
+  .main-container .sidebar {
+    width: 280px;
+  }
+}
+
+@media (max-width: 600px) {
+  .toolbar {
+    padding: 0 1rem;
+
+    .toolbar-title {
+      font-size: 1.1rem;
+    }
+  }
+}

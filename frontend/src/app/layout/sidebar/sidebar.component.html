@@ -1,0 +1,36 @@
+<div class="sidebar-container">
+  <!-- Logo/Branding -->
+  <div class="sidebar-header">
+    <mat-icon class="logo-icon">dashboard</mat-icon>
+    <span class="logo-text">Personal Hub</span>
+  </div>
+
+  <!-- Navigation Menu -->
+  <nav class="nav-menu">
+    <a
+      *ngFor="let item of navItems"
+      [routerLink]="item.route"
+      routerLinkActive="active"
+      [routerLinkActiveOptions]="{ exact: false }"
+      class="nav-item"
+      (click)="onNavigate()"
+    >
+      <mat-icon class="nav-icon">{{ item.icon }}</mat-icon>
+      <span class="nav-label">{{ item.label }}</span>
+    </a>
+  </nav>
+
+  <!-- Spacer -->
+  <div class="nav-spacer"></div>
+
+  <!-- User Profile Footer -->
+  <div class="user-profile">
+    <div class="user-avatar">
+      {{ getUserInitials() }}
+    </div>
+    <div class="user-details">
+      <div class="user-name">{{ getUserDisplayName() }}</div>
+      <div class="user-status">Online</div>
+    </div>
+  </div>
+</div>

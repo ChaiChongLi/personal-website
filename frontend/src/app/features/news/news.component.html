@@ -1,0 +1,141 @@
+<div class="news-container">
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="header-title">
+      <h1>Market News</h1>
+      <p class="subtitle" *ngIf="lastFetchedAt()">
+        Fetched {{ formatRelativeTime(lastFetchedAt()!.toISOString()) }}
+      </p>
+      <p class="subtitle" *ngIf="!lastFetchedAt() && cacheTime()">
+        Cache from {{ formatRelativeTime(cacheTime()!.toISOString()) }}
+      </p>
+      <p class="subtitle" *ngIf="!lastFetchedAt() && !cacheTime()">
+        Latest news for your watchlist stocks
+      </p>
+    </div>
+    <div class="header-buttons">
+      <button
+        mat-stroked-button
+        (click)="openPromptDialog()"
+        [disabled]="filteredArticles().length === 0"
+        matTooltip="Generate AI summarisation prompt from current articles"
+      >
+        <mat-icon>auto_awesome</mat-icon>
+        AI Prompt
+      </button>
+      <button
+        mat-raised-button
+        color="primary"
+        (click)="fetchNews()"
+        [disabled]="isLoadingFresh() || isLoadingCache()"
+        class="fetch-btn"
+      >
+        <mat-icon [class.spinning]="isLoadingFresh()">{{ isLoadingFresh() ? 'sync' : 'refresh' }}</mat-icon>
+        {{ isLoadingFresh() ? 'Fetching...' : 'Fetch Latest' }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading cache on page open -->
+  <div *ngIf="isLoadingCache()" class="loading-state">
+    <mat-spinner diameter="40"></mat-spinner>
+    <p>Loading cached news...</p>
+  </div>
+
+  <ng-container *ngIf="!isLoadingCache()">
+
+    <!-- No stocks in watchlist -->
+    <mat-card *ngIf="symbols().length === 0" class="empty-state-card">
+      <mat-card-content class="empty-state-content">
+        <mat-icon class="empty-icon">show_chart</mat-icon>
+        <h2>No Stocks in Watchlist</h2>
+        <p>Add stocks to your watchlist to see news here</p>
+      </mat-card-content>
+    </mat-card>
+
+    <ng-container *ngIf="symbols().length > 0">
+
+      <!-- Filter bar -->
+      <div class="filter-bar">
+        <div class="filter-row">
+
+          <!-- Symbol filter -->
+          <div class="filter-group">
+            <span class="filter-label">Stock</span>
+            <div class="symbol-toggle-wrap">
+              <mat-button-toggle-group
+                [value]="selectedSymbol()"
+                (change)="selectedSymbol.set($event.value)"
+              >
+                <mat-button-toggle value="All">All</mat-button-toggle>
+                <mat-button-toggle *ngFor="let sym of symbols()" [value]="sym">
+                  {{ sym }}
+                </mat-button-toggle>
+              </mat-button-toggle-group>
+            </div>
+          </div>
+
+          <!-- Date period filter -->
+          <div class="filter-group">
+            <span class="filter-label">Period</span>
+            <mat-button-toggle-group
+              [value]="dateFilter()"
+              (change)="dateFilter.set($event.value)"
+            >
+              <mat-button-toggle value="6h">6h</mat-button-toggle>
+              <mat-button-toggle value="12h">12h</mat-button-toggle>
+              <mat-button-toggle value="24h">24h</mat-button-toggle>
+            </mat-button-toggle-group>
+          </div>
+
+        </div>
+
+        <div class="filter-meta">
+          <span class="article-count">{{ filteredArticles().length }} articles</span>
+        </div>
+      </div>
+
+      <!-- No cached news yet — prompt to fetch -->
+      <mat-card *ngIf="allArticles().length === 0" class="empty-state-card">
+        <mat-card-content class="empty-state-content">
+          <mat-icon class="empty-icon">newspaper</mat-icon>
+          <h2>No Cached News</h2>
+          <p>Click "Fetch Latest" to load fresh news from Google for your watchlist</p>
+          <button mat-raised-button color="primary" (click)="fetchNews()" [disabled]="isLoadingFresh()">
+            <mat-icon>download</mat-icon>
+            Fetch News
+          </button>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- No articles match current filters -->
+      <div
+        *ngIf="allArticles().length > 0 && filteredArticles().length === 0"
+        class="no-results"
+      >
+        <mat-icon>search_off</mat-icon>
+        <p>No articles match the selected filters. Try a broader time range or "All" stocks.</p>
+      </div>
+
+      <!-- News feed -->
+      <div *ngIf="filteredArticles().length > 0" class="news-feed">
+        <div
+          *ngFor="let article of filteredArticles()"
+          class="news-item"
+          (click)="openNews(article.url)"
+        >
+          <div class="news-meta">
+            <span class="symbol-badge">{{ article.symbol }}</span>
+            <span class="source-text">{{ article.source }}</span>
+            <span class="news-time">{{ formatRelativeTime(article.publishedAt) }}</span>
+          </div>
+          <h3 class="news-headline">{{ article.headline }}</h3>
+          <p *ngIf="article.snippet" class="news-snippet">{{ article.snippet }}</p>
+        </div>
+      </div>
+
+    </ng-container>
+  </ng-container>
+
+</div>

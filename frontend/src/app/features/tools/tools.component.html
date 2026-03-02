@@ -1,0 +1,105 @@
+<div class="tools-container">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="header-title">
+      <h1>Bookmarks</h1>
+      <p class="subtitle">Your saved tools, articles and useful links</p>
+    </div>
+    <button mat-raised-button color="primary" (click)="openAddDialog()">
+      <mat-icon>add</mat-icon>
+      Add Bookmark
+    </button>
+  </div>
+
+  <!-- Filter and Search -->
+  <div class="filters-row">
+    <mat-form-field appearance="outline" class="search-field" floatLabel="always">
+      <mat-label>Search</mat-label>
+      <mat-icon matPrefix>search</mat-icon>
+      <input
+        matInput
+        [value]="searchQuery()"
+        (input)="onSearchChange($any($event.target).value)"
+        placeholder="Search by name, description, or tags"
+      />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="category-field" floatLabel="always">
+      <mat-label>Category</mat-label>
+      <mat-select [value]="selectedCategory()" (selectionChange)="onCategoryChange($event.value)">
+        <mat-option value="all">All Categories</mat-option>
+        <mat-option *ngFor="let cat of categoryOptions" [value]="cat">{{ cat }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading()" class="loading-state">
+    <mat-spinner diameter="50"></mat-spinner>
+    <p>Loading bookmarks...</p>
+  </div>
+
+  <!-- Tools Grid -->
+  <div *ngIf="!isLoading() && filteredTools().length > 0" class="tools-grid">
+    <mat-card *ngFor="let tool of filteredTools()" class="tool-card" [class.favorite]="tool.isFavorite">
+      <mat-card-content class="card-content" (click)="openDetailDialog(tool)">
+        <!-- Favorite button -->
+        <button
+          mat-icon-button
+          class="favorite-btn"
+          [class.active]="tool.isFavorite"
+          (click)="toggleFavorite(tool, $event)"
+          matTooltip="{{ tool.isFavorite ? 'Remove from favorites' : 'Add to favorites' }}"
+        >
+          <mat-icon>{{ tool.isFavorite ? 'star' : 'star_outline' }}</mat-icon>
+        </button>
+
+        <!-- Header: name + category badge -->
+        <div class="tool-header">
+          <div class="tool-name-row">
+            <mat-icon class="category-icon">{{ getCategoryIcon(tool.category) }}</mat-icon>
+            <h3 class="tool-name">{{ tool.name }}</h3>
+          </div>
+          <span [class]="'badge ' + getCategoryColor(tool.category)">{{ tool.category }}</span>
+        </div>
+
+        <!-- Description -->
+        <p class="tool-description">{{ tool.description }}</p>
+
+        <!-- Tags -->
+        <div *ngIf="tool.tags.length > 0" class="tags">
+          <mat-chip-set>
+            <mat-chip *ngFor="let tag of tool.tags" class="tag-chip">{{ tag }}</mat-chip>
+          </mat-chip-set>
+        </div>
+      </mat-card-content>
+
+      <!-- Footer -->
+      <mat-card-footer class="card-footer">
+        <button mat-button (click)="openUrl(tool.githubUrl, $event)" class="open-btn">
+          <mat-icon>open_in_new</mat-icon>
+          Open
+        </button>
+        <button mat-icon-button matTooltip="Edit" (click)="openEditDialog(tool); $event.stopPropagation()" class="edit-btn">
+          <mat-icon>edit</mat-icon>
+        </button>
+        <button mat-icon-button matTooltip="Delete" (click)="deleteTool(tool, $event)" color="warn" class="delete-btn">
+          <mat-icon>delete</mat-icon>
+        </button>
+      </mat-card-footer>
+    </mat-card>
+  </div>
+
+  <!-- Empty State -->
+  <mat-card *ngIf="!isLoading() && filteredTools().length === 0" class="empty-state-card">
+    <mat-card-content class="empty-state-content">
+      <mat-icon class="empty-icon">bookmarks</mat-icon>
+      <h2>No Bookmarks Found</h2>
+      <p>{{ searchQuery() || selectedCategory() !== 'all' ? 'Try adjusting your filters' : 'Start saving your favorite tools, articles and links' }}</p>
+      <button mat-raised-button color="primary" (click)="openAddDialog()">
+        <mat-icon>add</mat-icon>
+        Add Your First Bookmark
+      </button>
+    </mat-card-content>
+  </mat-card>
+</div>

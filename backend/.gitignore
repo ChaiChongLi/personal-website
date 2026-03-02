@@ -1,0 +1,59 @@
+# Node.js Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment Variables
+.env
+.env.local
+.env.*.local
+
+# Logs
+logs/
+*.log
+*.log.*
+
+# SSL Certificates (if using local HTTPS)
+certs/
+*.pem
+*.key
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+.editorconfig
+
+# OS Files
+Thumbs.db
+.DS_Store
+
+# Database Files (if using local SQLite instead of MySQL)
+*.db
+*.sqlite
+*.sqlite3
+
+# Temporary Files
+tmp/
+temp/
+*.tmp
+
+# Build Output
+dist/
+build/
+
+# Docker (if building locally)
+.dockerignore
+
+# Resume Files (generated PDFs and Word docs)
+# Uncomment if you want to exclude generated resume files
+# *.pdf
+# *.docx
+
+# Testing Coverage
+coverage/
+.nyc_output/

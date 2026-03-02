@@ -1,0 +1,73 @@
+.add-stock-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin: 2rem 0;
+
+  .form-field {
+    width: 100%;
+  }
+}
+
+// Dialog content styling — panelClass 'add-stock-dialog' is on .cdk-overlay-pane
+::ng-deep .add-stock-dialog {
+  .mat-mdc-dialog-container,
+  .mat-mdc-dialog-container .mdc-dialog__surface {
+    background-color: var(--bg-card) !important;
+    color: var(--text-primary) !important;
+  }
+
+  h2.mat-mdc-dialog-title {
+    color: var(--text-primary) !important;
+  }
+
+  .mat-mdc-dialog-content {
+    padding: 1.5rem 1.5rem 2rem;
+    color: var(--text-primary) !important;
+  }
+
+  .mat-mdc-dialog-actions {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--border);
+  }
+
+  // Input & select text
+  .mdc-text-field__input {
+    color: var(--text-primary) !important;
+  }
+
+  // Floating labels
+  .mat-mdc-floating-label,
+  .mdc-floating-label {
+    color: var(--text-secondary) !important;
+  }
+
+  // Select trigger value
+  .mat-mdc-select-value,
+  .mat-mdc-select-value-text {
+    color: var(--text-primary) !important;
+  }
+
+  // Select arrow
+  .mat-mdc-select-arrow svg {
+    fill: var(--text-secondary) !important;
+  }
+
+  // Outline border
+  .mdc-notched-outline__leading,
+  .mdc-notched-outline__notch,
+  .mdc-notched-outline__trailing {
+    border-color: var(--border) !important;
+  }
+
+  // Hint & error text
+  .mat-mdc-form-field-hint,
+  .mat-mdc-form-field-error {
+    color: var(--text-secondary) !important;
+  }
+
+  // Prefix icons
+  .mat-mdc-form-field-icon-prefix mat-icon {
+    color: var(--text-secondary) !important;
+  }
+}

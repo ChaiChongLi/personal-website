@@ -1,0 +1,65 @@
+<h2 mat-dialog-title>Add Stock to Watchlist</h2>
+
+<mat-dialog-content>
+  <form [formGroup]="addStockForm" class="add-stock-form">
+    <!-- Symbol Field -->
+    <mat-form-field appearance="outline" class="form-field" floatLabel="always">
+      <mat-label>Stock Symbol</mat-label>
+      <mat-icon matPrefix>trending_up</mat-icon>
+      <input
+        matInput
+        formControlName="symbol"
+        placeholder="e.g., MAYBANK, AAPL, BTC-USD"
+        (change)="onSymbolChange()"
+        autocomplete="off"
+      />
+      <mat-error *ngIf="symbol?.hasError('required')">Symbol is required</mat-error>
+      <mat-error *ngIf="symbol?.hasError('pattern')">Only letters, numbers, dots and hyphens allowed</mat-error>
+    </mat-form-field>
+
+    <!-- Market Selection -->
+    <mat-form-field appearance="outline" class="form-field" floatLabel="always">
+      <mat-label>Market</mat-label>
+      <mat-icon matPrefix>public</mat-icon>
+      <mat-select formControlName="market">
+        <mat-option *ngFor="let option of marketOptions" [value]="option.value">
+          {{ option.label }}
+        </mat-option>
+      </mat-select>
+      <mat-error *ngIf="market?.hasError('required')">Exchange is required</mat-error>
+    </mat-form-field>
+
+    <!-- Company Name -->
+    <mat-form-field appearance="outline" class="form-field" floatLabel="always">
+      <mat-label>Company Name</mat-label>
+      <mat-icon matPrefix>business</mat-icon>
+      <input
+        matInput
+        formControlName="companyName"
+        placeholder="e.g., Maybank, Apple Inc."
+        autocomplete="off"
+      />
+      <mat-error *ngIf="companyName?.hasError('required')">Company name is required</mat-error>
+    </mat-form-field>
+
+    <!-- Notes (Optional) -->
+    <mat-form-field appearance="outline" class="form-field" floatLabel="always">
+      <mat-label>Notes (Optional)</mat-label>
+      <mat-icon matPrefix>note</mat-icon>
+      <textarea
+        matInput
+        formControlName="notes"
+        placeholder="Add any notes about this stock..."
+        rows="3"
+      ></textarea>
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="onCancel()">Cancel</button>
+  <button mat-raised-button color="primary" (click)="onSubmit()" [disabled]="!isFormValid">
+    <mat-icon>add</mat-icon>
+    Add Stock
+  </button>
+</mat-dialog-actions>

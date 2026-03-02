@@ -1,0 +1,211 @@
+// Dialog surface dark theme
+::ng-deep .todo-detail-dialog {
+  .mdc-dialog__surface {
+    background-color: var(--bg-card) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 8px !important;
+  }
+
+  // Form field white text inside dialog
+  .mdc-text-field__input,
+  .mat-mdc-select-value,
+  .mat-mdc-select-value-text {
+    color: var(--text-primary) !important;
+  }
+
+  .mat-mdc-floating-label,
+  .mdc-floating-label {
+    color: var(--text-secondary) !important;
+  }
+
+  .mdc-notched-outline__leading,
+  .mdc-notched-outline__notch,
+  .mdc-notched-outline__trailing {
+    border-color: var(--border) !important;
+  }
+
+  .mdc-text-field--focused .mdc-notched-outline__leading,
+  .mdc-text-field--focused .mdc-notched-outline__notch,
+  .mdc-text-field--focused .mdc-notched-outline__trailing {
+    border-color: var(--accent) !important;
+  }
+
+  .mat-mdc-select-arrow svg {
+    fill: var(--text-secondary) !important;
+  }
+
+  textarea.mat-mdc-input-element {
+    color: var(--text-primary) !important;
+  }
+}
+
+.dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem 0;
+
+  h2 {
+    margin: 0;
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .header-actions {
+    display: flex;
+    gap: 0.25rem;
+
+    button {
+      color: var(--text-secondary);
+
+      &:hover {
+        color: var(--text-primary);
+      }
+    }
+  }
+}
+
+.dialog-content {
+  padding: 1.25rem 1.5rem !important;
+  max-height: 70vh;
+
+  .task-title {
+    margin: 0 0 1rem;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.4;
+
+    &.done-title {
+      text-decoration: line-through;
+      color: var(--text-secondary);
+    }
+  }
+
+  .meta-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.625rem;
+    margin-bottom: 1.25rem;
+
+    .status-chip {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: 999px;
+      font-size: 0.8125rem;
+      font-weight: 500;
+
+      &.status-pending { background-color: rgba(210, 153, 34, 0.15); color: var(--warning); }
+      &.status-in-progress { background-color: rgba(88, 166, 255, 0.15); color: var(--accent); }
+      &.status-done { background-color: rgba(63, 185, 80, 0.15); color: var(--success); }
+    }
+
+    .due-date-chip {
+      display: flex;
+      align-items: center;
+      gap: 0.375rem;
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
+
+      mat-icon {
+        font-size: 0.875rem;
+        width: 0.875rem;
+        height: 0.875rem;
+      }
+
+      &.overdue {
+        color: var(--danger);
+      }
+    }
+  }
+
+  mat-divider {
+    border-color: var(--border) !important;
+    margin-bottom: 1.25rem;
+  }
+
+  .detail-section {
+    margin-bottom: 1.25rem;
+
+    .section-label {
+      display: block;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 0.5rem;
+    }
+
+    .description-text {
+      margin: 0;
+      color: var(--text-primary);
+      font-size: 0.9375rem;
+      line-height: 1.6;
+      white-space: pre-wrap;
+    }
+
+    .no-value {
+      margin: 0;
+      color: var(--text-secondary);
+      font-style: italic;
+      font-size: 0.9375rem;
+    }
+  }
+
+  .timestamps {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+
+    span {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
+
+      mat-icon {
+        font-size: 1rem;
+        width: 1rem;
+        height: 1rem;
+      }
+    }
+  }
+
+  // Edit form
+  .edit-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding-top: 0.5rem;
+
+    .full-width {
+      width: 100%;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+
+      mat-form-field {
+        width: 100%;
+      }
+    }
+  }
+}
+
+::ng-deep mat-dialog-actions {
+  padding: 0.75rem 1.5rem 1.25rem !important;
+  gap: 0.75rem;
+  border-top: 1px solid var(--border);
+
+  button {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+  }
+}

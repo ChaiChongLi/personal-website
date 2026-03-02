@@ -1,0 +1,61 @@
+<h2 mat-dialog-title>{{ isEditing ? 'Edit Bookmark' : 'Add Bookmark' }}</h2>
+
+<mat-dialog-content>
+  <form [formGroup]="form" class="add-tool-form">
+
+    <!-- Name -->
+    <mat-form-field appearance="outline" class="form-field" floatLabel="always">
+      <mat-label>Name</mat-label>
+      <mat-icon matPrefix>label</mat-icon>
+      <input matInput formControlName="name" placeholder="e.g., VS Code, MDN Docs" autocomplete="off" />
+      <mat-error *ngIf="name?.hasError('required')">Name is required</mat-error>
+      <mat-error *ngIf="name?.hasError('minlength')">At least 2 characters</mat-error>
+    </mat-form-field>
+
+    <!-- Category -->
+    <mat-form-field appearance="outline" class="form-field" floatLabel="always">
+      <mat-label>Category</mat-label>
+      <mat-icon matPrefix>category</mat-icon>
+      <mat-select formControlName="category">
+        <mat-option *ngFor="let opt of categoryOptions" [value]="opt.value">
+          {{ opt.label }}
+        </mat-option>
+      </mat-select>
+      <mat-error *ngIf="category?.hasError('required')">Category is required</mat-error>
+    </mat-form-field>
+
+    <!-- URL -->
+    <mat-form-field appearance="outline" class="form-field" floatLabel="always">
+      <mat-label>URL</mat-label>
+      <mat-icon matPrefix>link</mat-icon>
+      <input matInput formControlName="url" placeholder="https://..." autocomplete="off" />
+      <mat-error *ngIf="url?.hasError('required')">URL is required</mat-error>
+      <mat-error *ngIf="url?.hasError('pattern')">Must be a valid URL starting with http(s)://</mat-error>
+    </mat-form-field>
+
+    <!-- Description -->
+    <mat-form-field appearance="outline" class="form-field" floatLabel="always">
+      <mat-label>Description</mat-label>
+      <mat-icon matPrefix>notes</mat-icon>
+      <textarea matInput formControlName="description" placeholder="What is this for?" rows="3"></textarea>
+      <mat-error *ngIf="description?.hasError('required')">Description is required</mat-error>
+    </mat-form-field>
+
+    <!-- Tags -->
+    <mat-form-field appearance="outline" class="form-field" floatLabel="always">
+      <mat-label>Tags (optional)</mat-label>
+      <mat-icon matPrefix>sell</mat-icon>
+      <input matInput formControlName="tags" placeholder="react, typescript, docs" autocomplete="off" />
+      <mat-hint>Comma-separated</mat-hint>
+    </mat-form-field>
+
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="onCancel()">Cancel</button>
+  <button mat-raised-button color="primary" (click)="onSubmit()" [disabled]="form.invalid">
+    <mat-icon>{{ isEditing ? 'save' : 'add' }}</mat-icon>
+    {{ isEditing ? 'Save Changes' : 'Add Bookmark' }}
+  </button>
+</mat-dialog-actions>

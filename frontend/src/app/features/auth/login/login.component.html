@@ -1,0 +1,108 @@
+<div class="login-container">
+  <mat-card class="login-card">
+    <!-- Header -->
+    <mat-card-header class="header">
+      <div class="logo">
+        <mat-icon class="logo-icon">dashboard</mat-icon>
+      </div>
+      <h1 class="title">Personal Hub</h1>
+      <p class="subtitle">Sign in to your account</p>
+    </mat-card-header>
+
+    <mat-divider></mat-divider>
+
+    <!-- Login Form -->
+    <mat-card-content class="content">
+      <!-- Error Message -->
+      <div *ngIf="errorMessage" class="error-message">
+        <mat-icon>error_outline</mat-icon>
+        <span>{{ errorMessage }}</span>
+      </div>
+
+      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="form">
+
+        <!-- Email Field -->
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Email</mat-label>
+          <input
+            matInput
+            type="email"
+            formControlName="email"
+            placeholder="Enter your email"
+            autocomplete="email"
+            (keypress)="onKeyPress($event)"
+            [disabled]="isLoading"
+          />
+          <mat-icon matPrefix>email</mat-icon>
+
+          <mat-error *ngIf="email?.hasError('required')">
+            Email is required
+          </mat-error>
+          <mat-error *ngIf="email?.hasError('email')">
+            Please enter a valid email address
+          </mat-error>
+        </mat-form-field>
+
+        <!-- Password Field -->
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Password</mat-label>
+          <input
+            matInput
+            formControlName="password"
+            [type]="hidePassword ? 'password' : 'text'"
+            placeholder="Enter your password"
+            autocomplete="current-password"
+            (keypress)="onKeyPress($event)"
+            [disabled]="isLoading"
+          />
+          <mat-icon matPrefix>lock</mat-icon>
+
+          <!-- Toggle Password Visibility -->
+          <button
+            mat-icon-button
+            matSuffix
+            (click)="togglePasswordVisibility()"
+            type="button"
+            [disabled]="isLoading"
+          >
+            <mat-icon>{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+          </button>
+
+          <mat-error *ngIf="password?.hasError('required')">
+            Password is required
+          </mat-error>
+          <mat-error *ngIf="password?.hasError('minlength')">
+            Password must be at least 6 characters
+          </mat-error>
+        </mat-form-field>
+
+        <!-- Remember Me -->
+        <div class="remember-me">
+          <mat-checkbox formControlName="rememberMe" [disabled]="isLoading">
+            Remember me
+          </mat-checkbox>
+        </div>
+
+        <!-- Submit Button -->
+        <button
+          mat-raised-button
+          color="primary"
+          type="submit"
+          [disabled]="!canSubmit"
+          class="submit-button"
+        >
+          <mat-icon *ngIf="isLoading" class="spinner">
+            <div class="spinner-inner"></div>
+          </mat-icon>
+          <span *ngIf="isLoading">Signing in...</span>
+          <span *ngIf="!isLoading">Sign In</span>
+        </button>
+      </form>
+
+      <!-- Link to register -->
+      <div class="footer-text">
+        <p>Don't have an account? <a routerLink="/register">Create one</a></p>
+      </div>
+    </mat-card-content>
+  </mat-card>
+</div>

@@ -1,0 +1,339 @@
+<div class="resume-container">
+  <!-- Page Header -->
+  <div class="page-header">
+    <h1>Resume Builder</h1>
+    <p class="subtitle">Create and manage multiple resume versions</p>
+  </div>
+
+  <!-- Profile Selector -->
+  <mat-card class="profile-selector-card">
+    <mat-card-content class="selector-content">
+      <div class="profiles-list">
+        <h3>Saved Profiles</h3>
+        <div *ngIf="profiles().length > 0" class="profiles-grid">
+          <button
+            *ngFor="let profile of profiles()"
+            mat-stroked-button
+            (click)="loadProfile(profile)"
+            [class.active]="selectedProfile()?.id === profile.id"
+            class="profile-btn"
+          >
+            <mat-icon>description</mat-icon>
+            <span>{{ profile.profileName }}</span>
+          </button>
+        </div>
+        <p *ngIf="profiles().length === 0" class="no-profiles">No saved profiles yet</p>
+      </div>
+
+      <button mat-raised-button color="primary" (click)="newProfile()" class="new-profile-btn">
+        <mat-icon>add</mat-icon>
+        New Profile
+      </button>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Resume Form -->
+  <mat-stepper *ngIf="resumeForm" linear>
+    <!-- Profile Info Step -->
+    <mat-step>
+      <ng-template matStepLabel>Profile</ng-template>
+
+      <mat-card class="step-card">
+        <mat-card-content class="step-content">
+          <h3>Profile Name</h3>
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>Profile Name</mat-label>
+            <input matInput formControlName="profileName" placeholder="e.g., Software Engineer" />
+            <mat-icon matPrefix>label</mat-icon>
+          </mat-form-field>
+        </mat-card-content>
+      </mat-card>
+    </mat-step>
+
+    <!-- Personal Info Step -->
+    <mat-step>
+      <ng-template matStepLabel>Personal Info</ng-template>
+
+      <mat-card class="step-card">
+        <mat-card-content class="step-content">
+          <h3>Personal Information</h3>
+
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>Full Name</mat-label>
+            <input matInput formControlName="fullName" placeholder="John Doe" />
+            <mat-icon matPrefix>person</mat-icon>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>Email</mat-label>
+            <input matInput type="email" formControlName="email" placeholder="john@example.com" />
+            <mat-icon matPrefix>email</mat-icon>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>Phone</mat-label>
+            <input matInput formControlName="phone" placeholder="+1 (555) 123-4567" />
+            <mat-icon matPrefix>phone</mat-icon>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>Location</mat-label>
+            <input matInput formControlName="location" placeholder="City, Country" />
+            <mat-icon matPrefix>location_on</mat-icon>
+          </mat-form-field>
+
+          <h4 class="subsection-title">Social Links (Optional)</h4>
+
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>LinkedIn URL</mat-label>
+            <input matInput formControlName="linkedinUrl" placeholder="https://linkedin.com/in/johndoe" />
+            <mat-icon matPrefix>link</mat-icon>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>GitHub URL</mat-label>
+            <input matInput formControlName="githubUrl" placeholder="https://github.com/johndoe" />
+            <mat-icon matPrefix>code</mat-icon>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>Portfolio URL</mat-label>
+            <input matInput formControlName="portfolioUrl" placeholder="https://johndoe.dev" />
+            <mat-icon matPrefix>public</mat-icon>
+          </mat-form-field>
+        </mat-card-content>
+      </mat-card>
+    </mat-step>
+
+    <!-- Professional Summary Step -->
+    <mat-step>
+      <ng-template matStepLabel>Summary</ng-template>
+
+      <mat-card class="step-card">
+        <mat-card-content class="step-content">
+          <h3>Professional Summary</h3>
+
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>Summary</mat-label>
+            <textarea
+              matInput
+              formControlName="professionalSummary"
+              placeholder="Write a brief summary of your professional background and goals..."
+              rows="6"
+            ></textarea>
+            <mat-icon matPrefix>description</mat-icon>
+          </mat-form-field>
+        </mat-card-content>
+      </mat-card>
+    </mat-step>
+
+    <!-- Work Experience Step -->
+    <mat-step>
+      <ng-template matStepLabel>Experience</ng-template>
+
+      <mat-card class="step-card">
+        <mat-card-content class="step-content">
+          <h3>Work Experience</h3>
+
+          <div *ngFor="let exp of workExperienceGroups; let i = index" [formGroup]="exp" class="form-array-item">
+            <div class="item-header">
+              <h4>Position {{ i + 1 }}</h4>
+              <button mat-icon-button (click)="removeWorkExperience(i)" *ngIf="workExperience.length > 1" color="warn">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </div>
+
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="form-field">
+                <mat-label>Company</mat-label>
+                <input matInput formControlName="company" />
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="form-field">
+                <mat-label>Position</mat-label>
+                <input matInput formControlName="position" />
+              </mat-form-field>
+            </div>
+
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="form-field">
+                <mat-label>Start Date</mat-label>
+                <input matInput type="date" formControlName="startDate" />
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="form-field">
+                <mat-label>End Date</mat-label>
+                <input matInput type="date" formControlName="endDate" />
+              </mat-form-field>
+            </div>
+
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>Responsibilities</mat-label>
+              <textarea matInput formControlName="responsibilities" placeholder="Describe your main responsibilities" rows="3"></textarea>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>Achievements</mat-label>
+              <textarea matInput formControlName="achievements" placeholder="List your key achievements" rows="3"></textarea>
+            </mat-form-field>
+
+            <mat-divider></mat-divider>
+          </div>
+
+          <button mat-stroked-button (click)="addWorkExperience()" class="add-btn">
+            <mat-icon>add</mat-icon>
+            Add Position
+          </button>
+        </mat-card-content>
+      </mat-card>
+    </mat-step>
+
+    <!-- Education Step -->
+    <mat-step>
+      <ng-template matStepLabel>Education</ng-template>
+
+      <mat-card class="step-card">
+        <mat-card-content class="step-content">
+          <h3>Education</h3>
+
+          <div *ngFor="let edu of educationGroups; let i = index" [formGroup]="edu" class="form-array-item">
+            <div class="item-header">
+              <h4>Education {{ i + 1 }}</h4>
+              <button mat-icon-button (click)="removeEducation(i)" *ngIf="education.length > 1" color="warn">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </div>
+
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="form-field">
+                <mat-label>Institution</mat-label>
+                <input matInput formControlName="institution" />
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="form-field">
+                <mat-label>Degree</mat-label>
+                <input matInput formControlName="degree" />
+              </mat-form-field>
+            </div>
+
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="form-field">
+                <mat-label>Field of Study</mat-label>
+                <input matInput formControlName="field" />
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="form-field">
+                <mat-label>GPA (Optional)</mat-label>
+                <input matInput type="number" formControlName="gpa" step="0.01" />
+              </mat-form-field>
+            </div>
+
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="form-field">
+                <mat-label>Start Year</mat-label>
+                <input matInput type="number" formControlName="startYear" />
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="form-field">
+                <mat-label>End Year</mat-label>
+                <input matInput type="number" formControlName="endYear" />
+              </mat-form-field>
+            </div>
+
+            <mat-divider></mat-divider>
+          </div>
+
+          <button mat-stroked-button (click)="addEducation()" class="add-btn">
+            <mat-icon>add</mat-icon>
+            Add Education
+          </button>
+        </mat-card-content>
+      </mat-card>
+    </mat-step>
+
+    <!-- Skills Step -->
+    <mat-step>
+      <ng-template matStepLabel>Skills</ng-template>
+
+      <mat-card class="step-card">
+        <mat-card-content class="step-content">
+          <h3>Skills</h3>
+
+          <div *ngFor="let skill of skillGroups; let i = index" [formGroup]="skill" class="form-array-item">
+            <div class="item-header">
+              <h4>Skill Category {{ i + 1 }}</h4>
+              <button mat-icon-button (click)="removeSkills(i)" *ngIf="skills.length > 1" color="warn">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </div>
+
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>Category</mat-label>
+              <input matInput formControlName="category" placeholder="e.g., Frontend, Backend" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="form-field">
+              <mat-label>Skills (comma-separated)</mat-label>
+              <textarea matInput formControlName="skills" placeholder="React, Angular, Vue.js" rows="2"></textarea>
+            </mat-form-field>
+
+            <mat-divider></mat-divider>
+          </div>
+
+          <button mat-stroked-button (click)="addSkills()" class="add-btn">
+            <mat-icon>add</mat-icon>
+            Add Skill Category
+          </button>
+        </mat-card-content>
+      </mat-card>
+    </mat-step>
+
+    <!-- Download Step -->
+    <mat-step>
+      <ng-template matStepLabel>Download</ng-template>
+
+      <mat-card class="step-card">
+        <mat-card-content class="step-content">
+          <h3>Download Your Resume</h3>
+
+          <p class="info-text">
+            Save your profile first, then download your resume in your preferred format.
+          </p>
+
+          <div class="action-buttons">
+            <button
+              mat-raised-button
+              color="primary"
+              (click)="saveProfile()"
+              [disabled]="resumeForm.invalid || isSaving()"
+            >
+              <mat-icon *ngIf="!isSaving()">save</mat-icon>
+              <mat-spinner *ngIf="isSaving()" diameter="24"></mat-spinner>
+              {{ isSaving() ? 'Saving...' : 'Save Profile' }}
+            </button>
+
+            <button
+              mat-raised-button
+              [disabled]="!selectedProfile() || isExporting()"
+              (click)="downloadPDF()"
+            >
+              <mat-icon *ngIf="!isExporting()">download</mat-icon>
+              <mat-spinner *ngIf="isExporting()" diameter="24"></mat-spinner>
+              Download PDF
+            </button>
+
+            <button
+              mat-raised-button
+              [disabled]="!selectedProfile() || isExporting()"
+              (click)="downloadWord()"
+            >
+              <mat-icon *ngIf="!isExporting()">download</mat-icon>
+              <mat-spinner *ngIf="isExporting()" diameter="24"></mat-spinner>
+              Download Word
+            </button>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </mat-step>
+  </mat-stepper>
+</div>

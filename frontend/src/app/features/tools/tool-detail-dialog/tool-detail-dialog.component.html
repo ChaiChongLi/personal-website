@@ -1,0 +1,51 @@
+<mat-dialog-content class="detail-content">
+  <!-- Header -->
+  <div class="detail-header">
+    <div class="detail-title-row">
+      <mat-icon class="detail-category-icon">{{ getCategoryIcon(tool.category) }}</mat-icon>
+      <h2 class="detail-name">{{ tool.name }}</h2>
+      <button mat-icon-button class="favorite-indicator" *ngIf="tool.isFavorite" matTooltip="Favorited">
+        <mat-icon>star</mat-icon>
+      </button>
+    </div>
+    <span class="detail-category-badge">{{ tool.category }}</span>
+  </div>
+
+  <div class="detail-divider"></div>
+
+  <!-- URL -->
+  <div class="detail-section">
+    <p class="detail-label">URL</p>
+    <a class="detail-url" (click)="openUrl()">
+      <mat-icon>open_in_new</mat-icon>
+      {{ tool.githubUrl }}
+    </a>
+  </div>
+
+  <!-- Description -->
+  <div class="detail-section">
+    <p class="detail-label">Description</p>
+    <p class="detail-description">{{ tool.description }}</p>
+  </div>
+
+  <!-- Tags -->
+  <div class="detail-section" *ngIf="tool.tags.length > 0">
+    <p class="detail-label">Tags</p>
+    <mat-chip-set>
+      <mat-chip *ngFor="let tag of tool.tags" class="detail-tag">{{ tag }}</mat-chip>
+    </mat-chip-set>
+  </div>
+
+  <!-- Meta -->
+  <div class="detail-meta">
+    <span>Added {{ tool.createdAt | date:'mediumDate' }}</span>
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="onClose()">Close</button>
+  <button mat-raised-button color="primary" (click)="onEdit()">
+    <mat-icon>edit</mat-icon>
+    Edit
+  </button>
+</mat-dialog-actions>

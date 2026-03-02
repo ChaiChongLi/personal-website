@@ -1,0 +1,114 @@
+<!-- VIEW MODE -->
+<ng-container *ngIf="!isEditing">
+  <div class="dialog-header">
+    <h2 mat-dialog-title>Task Detail</h2>
+    <div class="header-actions">
+      <button mat-icon-button matTooltip="Edit task" (click)="startEdit()">
+        <mat-icon>edit</mat-icon>
+      </button>
+      <button mat-icon-button matTooltip="Close" (click)="close()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <mat-dialog-content class="dialog-content">
+    <!-- Title -->
+    <h3 class="task-title" [class.done-title]="todo.status === 'done'">{{ todo.title }}</h3>
+
+    <!-- Meta badges -->
+    <div class="meta-row">
+      <span [class]="'badge ' + getPriorityColor(todo.priority)">{{ todo.priority }}</span>
+      <span class="status-chip" [class]="'status-' + todo.status">{{ statusLabel }}</span>
+      <span class="due-date-chip" [class.overdue]="isOverdue()">
+        <mat-icon>calendar_today</mat-icon>
+        {{ formatDate(todo.dueDate) }}
+      </span>
+    </div>
+
+    <mat-divider></mat-divider>
+
+    <!-- Description -->
+    <div class="detail-section">
+      <label class="section-label">Description</label>
+      <p *ngIf="todo.description" class="description-text">{{ todo.description }}</p>
+      <p *ngIf="!todo.description" class="no-value">No description provided</p>
+    </div>
+
+    <!-- Timestamps -->
+    <div class="timestamps">
+      <span><mat-icon>access_time</mat-icon> Created {{ formatDateTime(todo.createdAt) }}</span>
+      <span><mat-icon>update</mat-icon> Updated {{ formatDateTime(todo.updatedAt) }}</span>
+    </div>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button color="warn" (click)="confirmDelete()">
+      <mat-icon>delete</mat-icon> Delete
+    </button>
+    <button mat-raised-button color="primary" (click)="startEdit()">
+      <mat-icon>edit</mat-icon> Edit
+    </button>
+  </mat-dialog-actions>
+</ng-container>
+
+<!-- EDIT MODE -->
+<ng-container *ngIf="isEditing">
+  <div class="dialog-header">
+    <h2 mat-dialog-title>Edit Task</h2>
+    <button mat-icon-button matTooltip="Cancel" (click)="cancelEdit()">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <mat-dialog-content class="dialog-content">
+    <form [formGroup]="editForm" class="edit-form">
+
+      <mat-form-field appearance="outline" floatLabel="always" class="full-width">
+        <mat-label>Title</mat-label>
+        <input matInput formControlName="title" placeholder="Task title" />
+        <mat-error *ngIf="titleControl?.hasError('required')">Title is required</mat-error>
+        <mat-error *ngIf="titleControl?.hasError('minlength')">At least 3 characters</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" floatLabel="always" class="full-width">
+        <mat-label>Description</mat-label>
+        <textarea matInput formControlName="description" placeholder="Add details... (optional)" rows="4"></textarea>
+      </mat-form-field>
+
+      <div class="form-row">
+        <mat-form-field appearance="outline" floatLabel="always">
+          <mat-label>Priority</mat-label>
+          <mat-select formControlName="priority">
+            <mat-option value="low">Low</mat-option>
+            <mat-option value="medium">Medium</mat-option>
+            <mat-option value="high">High</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" floatLabel="always">
+          <mat-label>Status</mat-label>
+          <mat-select formControlName="status">
+            <mat-option value="pending">Pending</mat-option>
+            <mat-option value="in-progress">In Progress</mat-option>
+            <mat-option value="done">Done</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <mat-form-field appearance="outline" floatLabel="always" class="full-width">
+        <mat-label>Due Date</mat-label>
+        <input matInput formControlName="dueDate" type="date" />
+        <mat-icon matPrefix>calendar_today</mat-icon>
+      </mat-form-field>
+
+    </form>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button (click)="cancelEdit()">Cancel</button>
+    <button mat-raised-button color="primary" (click)="save()" [disabled]="editForm.invalid">
+      <mat-icon>save</mat-icon> Save
+    </button>
+  </mat-dialog-actions>
+</ng-container>
