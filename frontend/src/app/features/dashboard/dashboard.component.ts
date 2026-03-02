@@ -2,8 +2,11 @@ import { Component, OnInit, DestroyRef, inject, signal, computed } from '@angula
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDividerModule } from '@angular/material/divider';
@@ -19,6 +22,11 @@ interface DashboardNewsItem extends NewsItem {
   symbol: string;
 }
 
+interface CurrencyRate {
+  quote: string;  // MYR | SGD | JPY
+  rate: number;
+}
+
 const NEWS_PAGE_SIZE = 10;
 
 @Component({
@@ -29,6 +37,7 @@ const NEWS_PAGE_SIZE = 10;
     RouterModule,
     MatCardModule,
     MatButtonModule,
+    MatButtonToggleModule,
     MatIconModule,
     MatProgressSpinnerModule,
     MatDividerModule,
@@ -40,6 +49,32 @@ const NEWS_PAGE_SIZE = 10;
 })
 export class DashboardComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
+  private readonly http       = inject(HttpClient);
+
+  // Currency
+  isLoadingCurrency = signal(false);
+  currencyRawRates  = signal<Record<string, number>>({});  // USD-based: { MYR, SGD, JPY }
+  currencyDate      = signal<string>('');
+  fromCurrency      = signal<string>('USD');
+  currencyAmount    = signal<number>(1);
+
+  readonly currencies = ['USD', 'MYR', 'SGD', 'JPY'];
+
+  // Cross-rate computation: convert currencyAmount from fromCurrency to all others
+  convertedRates = computed(() => {
+    const raw    = this.currencyRawRates();
+    const from   = this.fromCurrency();
+    const amount = this.currencyAmount() || 1;
+    if (!Object.keys(raw).length) return [];
+
+    // Full table: USD=1 + fetched rates
+    const all: Record<string, number> = { USD: 1, ...raw };
+    const fromRate = all[from] ?? 1;
+
+    return this.currencies
+      .filter(c => c !== from)
+      .map(c => ({ quote: c, rate: (amount / fromRate) * (all[c] ?? 1) }));
+  });
 
   // Loading states
   isLoadingStocks    = signal(false);
@@ -74,11 +109,39 @@ export class DashboardComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.loadCurrencyRates();
     this.loadStocks();
     this.loadTodoStats();
     this.loadTools();
     this.loadNewsFromCache();
     this.loadTechFeedPreview();
+  }
+
+  // ── Currency ───────────────────────────────────────────────────────────────
+
+  loadCurrencyRates(): void {
+    this.isLoadingCurrency.set(true);
+    this.http.get<any>(`${environment.apiUrl}/currency`)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (res) => {
+          const payload = res.data;                        // unwrap envelope
+          this.currencyRawRates.set(payload.rates ?? {});
+          this.currencyDate.set(payload.date ?? '');
+          this.isLoadingCurrency.set(false);
+        },
+        error: () => this.isLoadingCurrency.set(false)
+      });
+  }
+
+  onAmountInput(event: Event): void {
+    const val = parseFloat((event.target as HTMLInputElement).value);
+    this.currencyAmount.set(isNaN(val) || val <= 0 ? 1 : val);
+  }
+
+  formatConverted(quote: string, rate: number): string {
+    if (quote === 'JPY') return rate.toFixed(0);
+    return rate >= 1000 ? rate.toFixed(2) : rate.toFixed(4);
   }
 
   // ── Stocks ─────────────────────────────────────────────────────────────────

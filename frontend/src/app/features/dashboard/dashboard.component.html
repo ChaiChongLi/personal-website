@@ -5,6 +5,57 @@
     <p class="page-subtitle">Welcome back! Here's your overview</p>
   </div>
 
+  <!-- Currency Converter -->
+  <div class="currency-strip">
+
+    <div class="currency-strip-left">
+      <mat-icon class="strip-icon">currency_exchange</mat-icon>
+      <span class="strip-label">FX</span>
+    </div>
+
+    <!-- Amount input -->
+    <input
+      type="number"
+      class="amount-input"
+      [value]="currencyAmount()"
+      (input)="onAmountInput($event)"
+      min="0.01"
+      step="1"
+    />
+
+    <!-- From currency selector -->
+    <mat-button-toggle-group
+      class="from-toggle"
+      [value]="fromCurrency()"
+      (change)="fromCurrency.set($event.value)"
+    >
+      <mat-button-toggle *ngFor="let c of currencies" [value]="c">{{ c }}</mat-button-toggle>
+    </mat-button-toggle-group>
+
+    <mat-icon class="arrow-icon">arrow_forward</mat-icon>
+
+    <!-- Converted results -->
+    <div class="currency-results" *ngIf="!isLoadingCurrency() && convertedRates().length > 0">
+      <div *ngFor="let r of convertedRates()" class="currency-result">
+        <span class="result-quote">{{ r.quote }}</span>
+        <span class="result-rate">{{ formatConverted(r.quote, r.rate) }}</span>
+      </div>
+    </div>
+
+    <div *ngIf="isLoadingCurrency()" class="currency-loading">
+      <mat-spinner diameter="16"></mat-spinner>
+    </div>
+
+    <div class="currency-strip-right">
+      <span *ngIf="currencyDate()" class="strip-date">{{ currencyDate() }}</span>
+      <button mat-icon-button class="strip-refresh" matTooltip="Refresh rates"
+        [disabled]="isLoadingCurrency()" (click)="loadCurrencyRates()">
+        <mat-icon [class.spinning]="isLoadingCurrency()">refresh</mat-icon>
+      </button>
+    </div>
+
+  </div>
+
   <!-- Summary Cards Grid -->
   <div class="summary-grid">
     <mat-card class="summary-card">

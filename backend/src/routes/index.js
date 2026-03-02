@@ -16,6 +16,7 @@ const todoRoutes = require('./todo.routes');
 const toolRoutes = require('./tool.routes');
 const resumeRoutes = require('./resume.routes');
 const techFeedRoutes = require('./techFeed.routes');
+const currencyRoutes = require('./currency.routes');
 
 const router = express.Router();
 
@@ -82,5 +83,6 @@ router.use('/resume', resumeRoutes);
 // GET /api/v1/tech-feed/cached   - read DB cache only
 // DELETE /api/v1/tech-feed/cache - clear cache (admin)
 router.use('/tech-feed', techFeedRoutes);
+router.use('/currency', currencyRoutes);
 
 module.exports = router;
