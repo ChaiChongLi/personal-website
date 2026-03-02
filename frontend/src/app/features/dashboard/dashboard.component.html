@@ -229,4 +229,55 @@
     </div>
 
   </div>
+
+  <!-- Tech Feed Preview -->
+  <mat-card class="content-card tech-feed-preview">
+    <mat-card-header class="section-header">
+      <h2>Tech Feed</h2>
+      <div class="header-actions">
+        <button mat-icon-button routerLink="/tech-feed" matTooltip="Open Tech Feed">
+          <mat-icon>open_in_new</mat-icon>
+        </button>
+      </div>
+    </mat-card-header>
+
+    <mat-card-content class="section-content tech-preview-content">
+
+      <div *ngIf="isLoadingTechFeed()" class="loading-state">
+        <mat-spinner diameter="36"></mat-spinner>
+      </div>
+
+      <ng-container *ngIf="!isLoadingTechFeed()">
+
+        <div *ngIf="recentTechFeed().length > 0" class="tech-preview-list">
+          <div *ngFor="let item of recentTechFeed()" class="tech-preview-item">
+            <span [class]="'source-badge tech-source-' + item.source">
+              {{ techSourceLabel(item.source) }}
+            </span>
+            <a
+              [href]="item.url"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="tech-title"
+              (click)="$event.stopPropagation()"
+            >{{ item.title }}</a>
+            <span *ngIf="item.score > 0" class="tech-score">
+              {{ item.source === 'github' ? '⭐' : '⬆' }} {{ item.score }}
+            </span>
+          </div>
+        </div>
+
+        <div *ngIf="recentTechFeed().length === 0" class="empty-state">
+          <mat-icon>rss_feed</mat-icon>
+          <p>No cached tech feed</p>
+          <button mat-stroked-button routerLink="/tech-feed" color="primary">
+            Open Tech Feed <mat-icon>open_in_new</mat-icon>
+          </button>
+        </div>
+
+      </ng-container>
+
+    </mat-card-content>
+  </mat-card>
+
 </div>

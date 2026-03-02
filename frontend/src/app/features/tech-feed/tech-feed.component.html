@@ -1,0 +1,131 @@
+<div class="techfeed-container">
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="header-title">
+      <h1>Tech Feed</h1>
+      <p class="subtitle" *ngIf="lastFetchedAt()">
+        Fetched {{ formatRelativeTime(lastFetchedAt()!.toISOString()) }}
+      </p>
+      <p class="subtitle" *ngIf="!lastFetchedAt() && cacheTime()">
+        Cache from {{ formatRelativeTime(cacheTime()!.toISOString()) }}
+      </p>
+      <p class="subtitle" *ngIf="!lastFetchedAt() && !cacheTime()">
+        Developer news from Hacker News, Dev.to, and GitHub Trending
+      </p>
+    </div>
+    <button
+      mat-raised-button
+      color="primary"
+      (click)="fetchFresh()"
+      [disabled]="isLoadingFresh() || isLoadingCache()"
+      class="fetch-btn"
+    >
+      <mat-icon [class.spinning]="isLoadingFresh()">
+        {{ isLoadingFresh() ? 'sync' : 'rss_feed' }}
+      </mat-icon>
+      {{ isLoadingFresh() ? 'Fetching...' : 'Fetch Latest' }}
+    </button>
+  </div>
+
+  <!-- Loading cache on page open -->
+  <div *ngIf="isLoadingCache()" class="loading-state">
+    <mat-spinner diameter="40"></mat-spinner>
+    <p>Loading cached feed...</p>
+  </div>
+
+  <ng-container *ngIf="!isLoadingCache()">
+
+    <!-- Filter bar -->
+    <div class="filter-bar">
+      <div class="filter-group">
+        <span class="filter-label">Source</span>
+        <mat-button-toggle-group
+          [value]="selectedSource()"
+          (change)="selectedSource.set($event.value)"
+        >
+          <mat-button-toggle value="All">All</mat-button-toggle>
+          <mat-button-toggle value="hackernews">
+            <mat-icon class="source-icon hn-icon">whatshot</mat-icon>
+            Hacker News
+          </mat-button-toggle>
+          <mat-button-toggle value="devto">
+            <mat-icon class="source-icon devto-icon">article</mat-icon>
+            Dev.to
+          </mat-button-toggle>
+          <mat-button-toggle value="github">
+            <mat-icon class="source-icon gh-icon">code</mat-icon>
+            GitHub
+          </mat-button-toggle>
+        </mat-button-toggle-group>
+      </div>
+
+      <div class="filter-meta">
+        <span class="article-count">{{ filteredItems().length }} items</span>
+      </div>
+    </div>
+
+    <!-- Empty state: no cache yet -->
+    <mat-card *ngIf="allItems().length === 0" class="empty-state-card">
+      <mat-card-content class="empty-state-content">
+        <mat-icon class="empty-icon">rss_feed</mat-icon>
+        <h2>No Cached Feed</h2>
+        <p>Click "Fetch Latest" to load tech news from all sources</p>
+        <button mat-raised-button color="primary" (click)="fetchFresh()" [disabled]="isLoadingFresh()">
+          <mat-icon>download</mat-icon>
+          Fetch Now
+        </button>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- No match for current filter -->
+    <div
+      *ngIf="allItems().length > 0 && filteredItems().length === 0"
+      class="no-results"
+    >
+      <mat-icon>search_off</mat-icon>
+      <p>No items for this source. Try "All" or fetch latest.</p>
+    </div>
+
+    <!-- Feed list -->
+    <div *ngIf="filteredItems().length > 0" class="feed-list">
+      <div
+        *ngFor="let item of filteredItems()"
+        class="feed-item"
+        (click)="openLink(item.url)"
+      >
+        <div class="item-meta">
+          <span [class]="'source-badge source-' + item.source">
+            <mat-icon class="badge-icon">{{ sourceIcon(item.source) }}</mat-icon>
+            {{ sourceLabel(item.source) }}
+          </span>
+          <span *ngIf="item.author" class="item-author">{{ item.author }}</span>
+          <span *ngIf="formatScore(item)" class="item-score">{{ formatScore(item) }}</span>
+          <span *ngIf="item.source === 'github' && item.extraData?.language" class="item-lang">
+            {{ item.extraData!.language }}
+          </span>
+          <span *ngIf="item.publishedAt" class="item-time">
+            {{ formatRelativeTime(item.publishedAt) }}
+          </span>
+          <span
+            *ngIf="item.source === 'github' && item.extraData?.starsToday"
+            class="stars-today"
+          >
+            +{{ item.extraData!.starsToday }} today
+          </span>
+          <span
+            *ngIf="item.source === 'hackernews' && item.extraData?.comments"
+            class="item-comments"
+          >
+            <mat-icon class="meta-icon">comment</mat-icon>
+            {{ item.extraData!.comments }}
+          </span>
+        </div>
+        <h3 class="item-title">{{ item.title }}</h3>
+        <p *ngIf="item.snippet" class="item-snippet">{{ item.snippet }}</p>
+      </div>
+    </div>
+
+  </ng-container>
+
+</div>

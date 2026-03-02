@@ -142,6 +142,28 @@ CREATE TABLE IF NOT EXISTS news_cache (
 COMMENT='Cached news articles for stocks with TTL-based cleanup';
 
 -- ============================================================================
+-- TECH FEED CACHE TABLE
+-- ============================================================================
+-- Caches developer and tech news from Hacker News, Dev.to, and GitHub Trending.
+-- Global shared cache (no user_id) with 60-minute TTL.
+CREATE TABLE IF NOT EXISTS tech_feed_cache (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  source VARCHAR(20) NOT NULL COMMENT 'hackernews | devto | github',
+  title VARCHAR(500) NOT NULL,
+  url LONGTEXT NOT NULL,
+  author VARCHAR(100),
+  published_at DATETIME,
+  score INT DEFAULT 0 COMMENT 'HN score / GitHub stars',
+  snippet LONGTEXT COMMENT 'Dev.to excerpt or GitHub repo description',
+  extra_data JSON COMMENT '{language, starsToday} for GitHub; {comments} for HN',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY unique_article (source, title(200)),
+  INDEX idx_source (source),
+  INDEX idx_created_at (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+COMMENT='Cached tech feed items from HN, Dev.to, GitHub Trending';
+
+-- ============================================================================
 -- DEFAULT ADMIN USER
 -- ============================================================================
 -- Insert default admin user with bcrypt-hashed password

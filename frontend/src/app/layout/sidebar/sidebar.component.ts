@@ -44,7 +44,8 @@ export class SidebarComponent {
     { label: 'News', route: '/news', icon: 'newspaper' },
     { label: 'To-Do', route: '/todo', icon: 'check_circle' },
     { label: 'Tools', route: '/tools', icon: 'build' },
-    { label: 'Resume', route: '/resume', icon: 'description' }
+    { label: 'Resume', route: '/resume', icon: 'description' },
+    { label: 'Tech Feed', route: '/tech-feed', icon: 'rss_feed' }
   ];
 
   constructor(protected authService: AuthService) {}

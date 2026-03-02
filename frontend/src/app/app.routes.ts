@@ -50,6 +50,10 @@ export const routes: Routes = [
       {
         path: 'resume',
         loadComponent: () => import('./features/resume/resume.component').then(m => m.ResumeComponent)
+      },
+      {
+        path: 'tech-feed',
+        loadComponent: () => import('./features/tech-feed/tech-feed.component').then(m => m.TechFeedComponent)
       }
     ]
   },

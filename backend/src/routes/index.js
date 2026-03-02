@@ -15,6 +15,7 @@ const newsRoutes = require('./news.routes');
 const todoRoutes = require('./todo.routes');
 const toolRoutes = require('./tool.routes');
 const resumeRoutes = require('./resume.routes');
+const techFeedRoutes = require('./techFeed.routes');
 
 const router = express.Router();
 
@@ -75,5 +76,11 @@ router.use('/tools', toolRoutes);
 // GET /api/v1/resume/:id/download/pdf - download as PDF
 // GET /api/v1/resume/:id/download/word - download as Word
 router.use('/resume', resumeRoutes);
+
+// Tech feed routes - all protected
+// GET /api/v1/tech-feed/         - fetch fresh from all sources
+// GET /api/v1/tech-feed/cached   - read DB cache only
+// DELETE /api/v1/tech-feed/cache - clear cache (admin)
+router.use('/tech-feed', techFeedRoutes);
 
 module.exports = router;

@@ -13,6 +13,7 @@ import { StockService, StockItem } from '../../core/services/stock.service';
 import { TodoService, Todo, TodoStats } from '../../core/services/todo.service';
 import { ToolService } from '../../core/services/tool.service';
 import { NewsService, NewsItem } from '../../core/services/news.service';
+import { TechFeedService, TechFeedItem } from '../../core/services/tech-feed.service';
 
 interface DashboardNewsItem extends NewsItem {
   symbol: string;
@@ -55,6 +56,10 @@ export class DashboardComponent implements OnInit {
   toolsCount   = signal(0);
   recentNews   = signal<DashboardNewsItem[]>([]);
 
+  // Tech Feed
+  isLoadingTechFeed = signal(false);
+  recentTechFeed    = signal<TechFeedItem[]>([]);
+
   // News pagination
   displayedCount = signal(NEWS_PAGE_SIZE);
   displayedNews  = computed(() => this.recentNews().slice(0, this.displayedCount()));
@@ -64,7 +69,8 @@ export class DashboardComponent implements OnInit {
     private stockService: StockService,
     private todoService: TodoService,
     private toolService: ToolService,
-    private newsService: NewsService
+    private newsService: NewsService,
+    private techFeedService: TechFeedService
   ) {}
 
   ngOnInit(): void {
@@ -72,6 +78,7 @@ export class DashboardComponent implements OnInit {
     this.loadTodoStats();
     this.loadTools();
     this.loadNewsFromCache();
+    this.loadTechFeedPreview();
   }
 
   // ── Stocks ─────────────────────────────────────────────────────────────────
@@ -170,6 +177,26 @@ export class DashboardComponent implements OnInit {
     flat.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
     this.recentNews.set(flat);
     this.displayedCount.set(NEWS_PAGE_SIZE); // reset to first page on new data
+  }
+
+  // ── Tech Feed ───────────────────────────────────────────────────────────────
+
+  private loadTechFeedPreview(): void {
+    this.isLoadingTechFeed.set(true);
+    this.techFeedService.getCachedFeed()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (data) => {
+          this.recentTechFeed.set(data.items.slice(0, 5));
+          this.isLoadingTechFeed.set(false);
+        },
+        error: () => this.isLoadingTechFeed.set(false)
+      });
+  }
+
+  techSourceLabel(source: string): string {
+    const labels: Record<string, string> = { hackernews: 'HN', devto: 'Dev.to', github: 'GitHub' };
+    return labels[source] ?? source;
   }
 
   // ── Formatting helpers ─────────────────────────────────────────────────────
