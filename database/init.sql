@@ -164,6 +164,33 @@ CREATE TABLE IF NOT EXISTS tech_feed_cache (
 COMMENT='Cached tech feed items from HN, Dev.to, GitHub Trending';
 
 -- ============================================================================
+-- SCHEDULER CONFIG TABLE
+-- ============================================================================
+-- DB-driven background job scheduler. One row per job.
+-- The scheduler polls every 60 seconds, runs jobs whose next_run_at <= NOW(),
+-- and writes back last_run_at, next_run_at, status, and last_error.
+-- To pause: SET enabled = 0. To trigger immediately: SET next_run_at = NOW().
+CREATE TABLE IF NOT EXISTS scheduler_config (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  job_name VARCHAR(50) NOT NULL,
+  enabled TINYINT(1) NOT NULL DEFAULT 1,
+  interval_minutes INT NOT NULL DEFAULT 60,
+  last_run_at DATETIME DEFAULT NULL,
+  next_run_at DATETIME DEFAULT NULL,
+  status VARCHAR(20) NOT NULL DEFAULT 'idle',
+  last_error TEXT DEFAULT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_job_name (job_name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Seed default jobs (safe to re-run: ON DUPLICATE KEY does nothing)
+INSERT INTO scheduler_config (job_name, enabled, interval_minutes) VALUES
+  ('tech_feed', 1, 60),
+  ('news',      1, 30)
+ON DUPLICATE KEY UPDATE job_name = job_name;
+
+-- ============================================================================
 -- DEFAULT ADMIN USER
 -- ============================================================================
 -- Insert default admin user with bcrypt-hashed password

@@ -30,6 +30,10 @@ const startServer = async () => {
     await testConnection();
     logger.info('Database connection successful');
 
+    // Start background scheduler
+    const scheduler = require('./jobs/scheduler');
+    scheduler.start();
+
     // Start listening on configured port
     const server = app.listen(PORT, () => {
       logger.info(`Server started successfully`);
@@ -52,6 +56,8 @@ const startServer = async () => {
       // Stop accepting new connections
       server.close(async () => {
         logger.info('HTTP server closed');
+
+        scheduler.stop();
 
         // Close database connections
         await closePool();
@@ -76,6 +82,8 @@ const startServer = async () => {
 
       server.close(async () => {
         logger.info('HTTP server closed');
+
+        scheduler.stop();
 
         // Close database connections
         await closePool();
